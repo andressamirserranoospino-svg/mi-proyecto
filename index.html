@@ -1,0 +1,1360 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#101317">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Control de Salidas de Volquetas</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+/* =========================================================
+   ESTILOS · tema "cantera nocturna": gris roca, ámbar de seguridad
+   ========================================================= */
+:root{
+  --bg:#101317; --panel:#1a1f26; --panel2:#232a33; --line:#313a46;
+  --txt:#f4f1ea; --mut:#9aa6b4; --amber:#ffb020; --orange:#ff6a2b;
+  --ok:#35d07f; --bad:#ff5a5f; --warn:#ffcf4d; --dust:#d8c7a3;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--txt);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:17px;line-height:1.35}
+body{min-height:100vh}
+h1,h2,h3,p{margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+.cond{font-family:"Roboto Condensed","Arial Narrow",sans-serif-condensed,system-ui,sans-serif;
+  text-transform:uppercase;letter-spacing:.05em}
+svg.i{width:1.2em;height:1.2em;stroke:currentColor;fill:none;stroke-width:1.8;
+  stroke-linecap:round;stroke-linejoin:round;vertical-align:-.22em;flex:none}
+.muted{color:var(--mut)}
+.rojo{color:var(--bad)}
+.hazard{height:10px;background:repeating-linear-gradient(-45deg,var(--amber) 0 14px,#111 14px 28px)}
+
+/* Barra superior */
+.top{position:sticky;top:0;z-index:20;background:rgba(16,19,23,.96);backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--line)}
+.top .bar{display:flex;align-items:center;gap:10px;padding:10px 14px;max-width:560px;margin:auto}
+.ib{width:46px;height:46px;border-radius:14px;border:1px solid var(--line);background:var(--panel);
+  display:grid;place-items:center;flex:none;cursor:pointer}
+.ib svg{width:24px;height:24px}
+.top .t{flex:1;min-width:0}
+.top .t b{display:block;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top .t small{color:var(--mut);font-size:12px}
+
+.wrap{max-width:560px;margin:0 auto;padding:14px 14px 90px}
+.tit{font-size:26px;margin:6px 0 14px;font-family:"Roboto Condensed","Arial Narrow",sans-serif-condensed,sans-serif;
+  text-transform:uppercase;letter-spacing:.04em}
+
+/* Tarjetas y formularios */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:14px}
+.paso{font-size:16px;display:flex;align-items:center;gap:10px;margin-bottom:12px;
+  font-family:"Roboto Condensed","Arial Narrow",sans-serif-condensed,sans-serif;text-transform:uppercase;letter-spacing:.05em}
+.paso b{width:30px;height:30px;border-radius:50%;background:var(--amber);color:#111;display:grid;place-items:center;font-size:15px}
+.lbl{display:block;font-size:14px;color:var(--mut);margin:12px 0 6px}
+input,select,textarea{width:100%;min-height:54px;border-radius:14px;border:1.5px solid var(--line);
+  background:#0d1013;padding:12px 14px;font-size:18px;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--amber)}
+textarea{min-height:90px;resize:vertical}
+input.pin{text-align:center;font-size:28px;letter-spacing:.4em}
+input[type=checkbox]{width:26px;min-height:26px;height:26px;accent-color:var(--amber)}
+.fila{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.chk{display:flex;align-items:center;gap:12px;margin-top:12px}
+
+.btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:58px;
+  border-radius:16px;border:1.5px solid var(--line);background:var(--panel2);font-weight:700;
+  font-size:17px;cursor:pointer;padding:12px 16px;letter-spacing:.02em}
+.btn:active{transform:scale(.98)}
+.btn.prim{background:var(--amber);border-color:var(--amber);color:#17120a}
+.btn.danger{background:var(--bad);border-color:var(--bad);color:#fff}
+.btn.sec{background:var(--panel2)}
+.btn.sm{min-height:44px;font-size:15px;padding:8px 12px;width:auto;flex:1}
+.btn.big{min-height:64px;font-size:19px;margin:6px 0 14px}
+.btn[disabled]{opacity:.5}
+.acc{display:flex;gap:10px;margin-top:12px;align-items:stretch}
+
+/* Login */
+.login-in{max-width:420px;margin:0 auto;padding:34px 20px;text-align:center}
+.logo{width:92px;height:92px;border-radius:26px;background:var(--amber);color:#17120a;
+  display:grid;place-items:center;margin:0 auto 18px;transform:rotate(-4deg)}
+.logo svg{width:54px;height:54px;stroke-width:1.7}
+.login h1{font-size:30px;line-height:1.1;margin-bottom:8px}
+.login .card{margin-top:24px;text-align:left}
+
+/* Inicio */
+.hero{position:relative;border-radius:22px;overflow:hidden;margin-bottom:16px;
+  background:linear-gradient(160deg,#252c36,#171b21);border:1px solid var(--line)}
+.hero svg.cantera{position:absolute;left:0;bottom:0;width:100%;height:70%;opacity:.9}
+.hero-in{position:relative;padding:18px 18px 16px}
+.hero small{color:var(--dust);font-size:13px}
+.hero h1{font-size:34px;margin:2px 0 14px}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.kpis div{background:rgba(10,12,15,.72);border:1px solid var(--line);border-radius:14px;padding:10px 8px;text-align:center}
+.kpis b{display:block;font-size:26px;color:var(--amber);font-family:"Roboto Condensed","Arial Narrow",sans-serif-condensed,sans-serif}
+.kpis span{font-size:11.5px;color:var(--mut);line-height:1.1;display:block}
+
+/* Botones del menú: TODOS del mismo tamaño */
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tile{aspect-ratio:1/1;border-radius:20px;border:1px solid var(--line);border-left:6px solid var(--amber);
+  background:linear-gradient(155deg,var(--panel2),var(--panel));padding:14px;text-align:left;cursor:pointer;
+  display:flex;flex-direction:column;justify-content:space-between;overflow:hidden}
+.tile:active{transform:scale(.97)}
+.tile .ic{width:62px;height:62px;border-radius:18px;background:rgba(255,176,32,.13);color:var(--amber);
+  display:grid;place-items:center}
+.tile .ic svg{width:36px;height:36px}
+.tile b{display:block;font-size:19px;line-height:1.1;font-family:"Roboto Condensed","Arial Narrow",sans-serif-condensed,sans-serif;
+  text-transform:uppercase;letter-spacing:.04em}
+.tile small{display:block;color:var(--mut);font-size:13px;margin-top:3px;line-height:1.15}
+
+/* Lista de selección de conductor */
+.buscar{position:relative}
+.buscar svg{position:absolute;left:14px;top:17px;color:var(--mut)}
+.buscar input{padding-left:44px}
+.lista-sel{max-height:250px;overflow:auto;margin-top:10px;display:flex;flex-direction:column;gap:8px}
+.opt{display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;width:100%;
+  min-height:60px;border-radius:14px;border:1.5px solid var(--line);background:var(--panel2);padding:10px 12px;cursor:pointer}
+.opt.sel{border-color:var(--amber);background:rgba(255,176,32,.12)}
+.opt b{display:block;font-size:16px}
+.opt small{color:var(--mut)}
+.aviso{margin-top:10px;border-radius:14px;padding:12px 14px;font-size:15px;display:flex;gap:10px}
+.aviso.bad{background:rgba(255,90,95,.14);border:1px solid var(--bad)}
+.aviso.warn{background:rgba(255,207,77,.12);border:1px solid var(--warn)}
+.aviso.ok{background:rgba(53,208,127,.12);border:1px solid var(--ok)}
+
+/* Controles Cumple / No cumple */
+.ctl{border:1.5px solid var(--line);border-radius:16px;padding:12px;margin-bottom:10px;background:var(--panel2)}
+.ctl.si{border-color:var(--ok)} .ctl.no{border-color:var(--bad)}
+.ctl-t{display:flex;align-items:center;gap:10px;font-weight:700;margin-bottom:10px}
+.ctl-t svg{width:26px;height:26px;color:var(--amber)}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.seg button{min-height:56px;border-radius:14px;border:1.5px solid var(--line);background:#0d1013;
+  font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;color:var(--mut)}
+.seg button.on{background:var(--ok);border-color:var(--ok);color:#06210f}
+.seg button.on.bad{background:var(--bad);border-color:var(--bad);color:#fff}
+
+/* Medidor de carga */
+.limbox{font-size:14.5px;background:#0d1013;border:1px dashed var(--line);border-radius:14px;padding:12px;margin-top:12px}
+.medidor{position:relative;display:flex;height:22px;border-radius:12px;overflow:hidden;margin-top:18px;background:#0d1013}
+.medidor i{display:block;height:100%}
+.zg{background:var(--ok)} .zy{background:var(--warn)} .zr{background:var(--bad)}
+.mk{position:absolute;top:-6px;width:4px;height:34px;background:#fff;border-radius:3px;box-shadow:0 0 0 2px #000;transform:translateX(-2px)}
+.escala{position:relative;height:22px;margin-top:6px;font-size:12px;color:var(--mut)}
+.escala em{position:absolute;transform:translateX(-50%);font-style:normal;white-space:nowrap}
+.veredicto{margin-top:8px;border-radius:14px;padding:14px;font-weight:700;display:flex;gap:10px;align-items:center;font-size:17px}
+.veredicto.ok{background:rgba(53,208,127,.15);border:1.5px solid var(--ok);color:var(--ok)}
+.veredicto.no{background:rgba(255,90,95,.15);border:1.5px solid var(--bad);color:var(--bad)}
+.veredicto small{display:block;font-weight:500;color:var(--txt);font-size:14px}
+
+/* Foto */
+.fotoBtn{display:flex;align-items:center;justify-content:center;gap:10px;min-height:60px;border-radius:14px;
+  border:1.5px dashed var(--amber);color:var(--amber);font-weight:700;cursor:pointer}
+.prevFoto{width:100%;max-height:260px;object-fit:cover;border-radius:14px;margin-top:10px}
+
+/* Tarjetas de lista */
+.item,.sal{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px;margin-bottom:12px}
+.item header,.sal header{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.item header small,.sal header small{display:block;color:var(--mut);font-size:13.5px}
+.item p,.sal p{margin-top:8px;font-size:15px}
+.sal.anul{opacity:.6}
+.chip{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:4px 10px;font-size:13px;font-weight:700;white-space:nowrap}
+.chip.ok{background:rgba(53,208,127,.16);color:var(--ok)}
+.chip.bad{background:rgba(255,90,95,.16);color:var(--bad)}
+.chip.warn{background:rgba(255,207,77,.16);color:var(--warn)}
+.chip.gris{background:var(--panel2);color:var(--mut)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.falla{color:var(--bad)}
+.obs{color:var(--dust);font-style:italic}
+.foto{display:flex;align-items:center;gap:10px;background:var(--panel2);border:1px solid var(--line);
+  border-radius:14px;padding:6px 12px 6px 6px;cursor:pointer;flex:1}
+.foto img{width:54px;height:54px;object-fit:cover;border-radius:10px}
+.foto span{font-weight:700;font-size:14px}
+.sin{display:flex;align-items:center;flex:1;font-size:14px}
+.vacio{text-align:center;color:var(--mut);padding:30px 10px}
+
+/* Barras de fallas */
+.barra{margin:10px 0}
+.barra .h{display:flex;justify-content:space-between;font-size:14px;margin-bottom:4px}
+.barra .b{height:12px;border-radius:8px;background:#0d1013;overflow:hidden}
+.barra .b i{display:block;height:100%;background:var(--ok)}
+.barra .b i.m{background:var(--warn)} .barra .b i.p{background:var(--bad)}
+
+/* Consolidado */
+.resumen{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.res{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px}
+.res small{color:var(--mut);font-size:12.5px;display:block}
+.res b{font-size:26px;color:var(--amber);display:block;font-family:"Roboto Condensed","Arial Narrow",sans-serif-condensed,sans-serif}
+.res em{font-style:normal;font-size:13px}
+.up{color:var(--ok)} .down{color:var(--bad)}
+.tabla-w{overflow-x:auto;border-radius:16px;border:1px solid var(--line);margin-bottom:14px}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:14px;background:var(--panel)}
+th,td{padding:10px 8px;text-align:center;border-bottom:1px solid var(--line)}
+th{background:var(--panel2);font-size:12px;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
+td.n,th.n{text-align:left;min-width:130px}
+tr.fila-c{cursor:pointer}
+.pos{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--amber);color:#111;font-weight:800}
+
+/* Modales y avisos */
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:flex-end;justify-content:center;z-index:50;padding:0}
+#modal.open{display:flex}
+.mbox{background:var(--panel);width:100%;max-width:560px;border-radius:24px 24px 0 0;padding:20px 18px 24px;
+  border-top:4px solid var(--amber);max-height:92vh;overflow:auto}
+.mbox h3{font-size:22px;margin-bottom:10px;font-family:"Roboto Condensed","Arial Narrow",sans-serif-condensed,sans-serif;text-transform:uppercase}
+.mtxt{font-size:16px}
+.mtxt ul{margin:8px 0;padding-left:20px}
+.mbtn{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.mbtn .btn:only-child{grid-column:1/-1}
+.mbox img.grande{width:100%;border-radius:14px;margin-top:6px}
+#toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,30px);background:#000;color:#fff;
+  border:1.5px solid var(--amber);padding:14px 20px;border-radius:14px;opacity:0;pointer-events:none;
+  transition:.25s;z-index:60;max-width:90vw;text-align:center;font-weight:600}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+#toast.bad{border-color:var(--bad)}
+#toast.ok{border-color:var(--ok)}
+.suma{font-weight:800;padding:2px 10px;border-radius:10px}
+.suma.ok{background:rgba(53,208,127,.16);color:var(--ok)}
+.suma.bad{background:rgba(255,90,95,.16);color:var(--bad)}
+.nota{font-size:14px;color:var(--mut);margin-top:8px}
+.nota b{color:var(--txt)}
+
+/* Impresión */
+#print{display:none}
+@media print{
+  body{background:#fff!important}
+  #app,#modal,#toast{display:none!important}
+  #print{display:block!important;color:#111;font-family:Arial,sans-serif;font-size:12px}
+  #print h1{font-size:20px;margin-bottom:4px}
+  #print table{min-width:0;width:100%;font-size:11px;background:#fff}
+  #print th,#print td{border:1px solid #999;padding:4px;color:#111;background:#fff}
+  #print th{background:#eee}
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="print"></div>
+<div id="modal"></div>
+<div id="toast"></div>
+<noscript>Esta aplicación necesita JavaScript.</noscript>
+
+<script>
+'use strict';
+/* =========================================================
+   CONTROL DE SALIDAS DE VOLQUETAS · Cantera Santa Rita
+   Secciones:  1) Reglas de negocio (funciones puras)
+               2) Datos (IndexedDB)
+               3) Interfaz
+   ========================================================= */
+
+/* =========================================================
+   1) REGLAS DE NEGOCIO  (sin acceso a pantalla ni base de datos)
+   ========================================================= */
+// <REGLAS>
+const CONTROLES = [
+  { k: 'lona',        nombre: 'Lona o malla colocada',   corto: 'Lona' },
+  { k: 'lavado',      nombre: 'Lavado de llantas',       corto: 'Lavado' },
+  { k: 'humectacion', nombre: 'Humectación de la carga', corto: 'Humectación' },
+  { k: 'carga',       nombre: 'Carga dentro del límite', corto: 'Carga' }
+];
+
+const TIPOS = {
+  sencillo: 'Volqueta sencilla (C2)',
+  doble:    'Doble troque (C3)',
+  tracto:   'Tractocamión (3S3)'
+};
+
+// Valores por defecto (todo editable en Configuración)
+const CFG_DEF = {
+  pesos: { lona: 25, lavado: 25, humectacion: 20, carga: 30 },
+  escala: [ { min: 95, pct: 100 }, { min: 85, pct: 60 }, { min: 70, pct: 30 } ], // debajo del último: 0 %
+  bonoMax: 200000,
+  puntajeMin: 70,          // puntaje mínimo para seguir habilitado
+  notaMin: 70,             // nota mínima para aprobar la capacitación
+  pesoPrevias: 25,         // % de peso de las salidas hechas ANTES de la última capacitación aprobada
+  limites: { sencillo: 17, doble: 28, tracto: 52 }, // peso bruto vehicular máximo en vía (toneladas)
+  recomendado: 0,          // referencia vial recomendada (t). 0 = desactivada
+  exigirRecomendado: false,
+  pinSup: '1234',
+  pinAdm: '9999'
+};
+
+function redondear(n, d = 2) {
+  const f = Math.pow(10, d);
+  return Math.round((n + Number.EPSILON) * f) / f;
+}
+
+/* ---- Límite de carga: lo marca el menor entre el camión y la vía ----
+   La norma limita el PESO BRUTO (camión vacío + combustible + carga).
+   Si se registra la tara (peso vacío), la carga permitida por la vía es
+   límite legal − tara. Sin tara, se compara directamente con el peso ingresado. */
+function limiteCarga(camion, cfg) {
+  const pbv = Number(cfg.limites[camion.tipo]) || 0;
+  const tara = Number(camion.tara) || 0;
+  const legal = Math.max(0, redondear(pbv - tara, 3));
+  const cap = Number(camion.capacidad) || 0;
+  const limite = Math.min(cap, legal);
+  return { capacidad: cap, pbv, tara, legal, limite,
+           marca: cap <= legal ? 'camion' : 'via', conTara: tara > 0 };
+}
+
+function evaluarCarga(peso, camion, cfg) {
+  const L = limiteCarga(camion, cfg);
+  const rec = Number(cfg.recomendado) || 0;
+  const sobreRec = rec > 0 && peso > rec;
+  const cumpleLimite = peso <= L.limite;
+  const cumple = cumpleLimite && !(cfg.exigirRecomendado && sobreRec);
+  return Object.assign({}, L, { peso, rec, sobreRec, cumple,
+    exceso: redondear(peso - L.limite, 3) });
+}
+
+/* ---- Meses ---- */
+function mesDeTs(ts) {
+  const d = new Date(ts);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+}
+function limitesMes(mes) {
+  const p = mes.split('-').map(Number);
+  return { ini: new Date(p[0], p[1] - 1, 1).getTime(), fin: new Date(p[0], p[1], 1).getTime() };
+}
+function mesAnterior(mes) {
+  const p = mes.split('-').map(Number);
+  const d = new Date(p[0], p[1] - 2, 1);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+}
+
+/* ---- Bono según la escala ---- */
+function pctBonoPorPuntaje(puntaje, escala) {
+  const e = escala.slice().sort((a, b) => b.min - a.min);
+  for (const t of e) { if (puntaje >= t.min) return t.pct; }
+  return 0;
+}
+
+/* Fecha de la última capacitación aprobada antes de 'hasta' (ms) */
+function ultimaCapAprobada(conductorId, capacitaciones, hasta) {
+  let u = null;
+  capacitaciones.forEach(c => {
+    if (c.conductorId === conductorId && c.aprobada && c.ts < hasta && (u === null || c.ts > u)) u = c.ts;
+  });
+  return u;
+}
+
+/* ---- Cálculo mensual de un conductor ----
+   Puntaje = Σ (% cumplimiento del control × peso del control).
+   Las salidas hechas ANTES de su última capacitación aprobada pesan solo
+   'pesoPrevias' % (por defecto 25 %): así un mal arranque no lo arrastra
+   cuando ya recapacitó y mejoró. Sin recapacitación, todas pesan igual. */
+function calcularConductorMes(conductorId, mes, salidas, capacitaciones, cfg) {
+  const lim = limitesMes(mes);
+  const ultCap = ultimaCapAprobada(conductorId, capacitaciones, lim.fin);
+  const lista = salidas.filter(s => !s.anulada && s.conductorId === conductorId && s.mes === mes);
+  const factor = Math.max(0, Math.min(1, (Number(cfg.pesoPrevias) || 0) / 100));
+  const r = { conductorId, mes, n: lista.length, nPonderado: 0, pct: {}, fallas: {},
+              puntaje: 0, pctBono: 0, bono: 0, ultCap, hayNuevas: false, ponderadas: 0 };
+  const suma = {};
+  CONTROLES.forEach(c => { suma[c.k] = 0; r.fallas[c.k] = 0; });
+  lista.forEach(s => {
+    const previa = ultCap !== null && s.ts < ultCap;
+    const w = previa ? factor : 1;
+    if (previa) r.ponderadas++; else r.hayNuevas = true;
+    r.nPonderado += w;
+    CONTROLES.forEach(c => { if (s[c.k]) suma[c.k] += w; else r.fallas[c.k]++; });
+  });
+  let p = 0;
+  CONTROLES.forEach(c => {
+    r.pct[c.k] = r.nPonderado > 0 ? (suma[c.k] / r.nPonderado) * 100 : 0;
+    p += r.pct[c.k] * (cfg.pesos[c.k] / 100);
+  });
+  r.puntaje = redondear(p, 2);
+  r.pctBono = (r.n > 0 && r.nPonderado > 0) ? pctBonoPorPuntaje(r.puntaje, cfg.escala) : 0;
+  r.bono = Math.round((r.pctBono / 100) * cfg.bonoMax);
+  return r;
+}
+
+/* ---- Cumplimiento global del mes (todas las salidas válidas) ---- */
+function cumplimientoGlobal(mes, salidas, cfg) {
+  const lista = salidas.filter(s => !s.anulada && s.mes === mes);
+  if (!lista.length) return null;
+  let p = 0;
+  CONTROLES.forEach(c => {
+    const ok = lista.filter(s => s[c.k]).length;
+    p += (ok / lista.length) * 100 * (cfg.pesos[c.k] / 100);
+  });
+  return redondear(p, 2);
+}
+
+/* ---- Pareto de incumplimientos ---- */
+function calcularPareto(mes, salidas) {
+  const lista = salidas.filter(s => !s.anulada && s.mes === mes);
+  const datos = CONTROLES.map(c => ({ k: c.k, nombre: c.corto, fallas: lista.filter(s => !s[c.k]).length }));
+  datos.sort((a, b) => b.fallas - a.fallas);
+  const total = datos.reduce((a, d) => a + d.fallas, 0);
+  let acum = 0;
+  datos.forEach(d => { acum += d.fallas; d.acum = total ? (acum / total) * 100 : 0; });
+  return { datos, total };
+}
+
+/* ---- Cierre de mes: quién debe repetir la capacitación ---- */
+function evaluarCierre(mes, conductores, salidas, capacitaciones, cfg) {
+  const cambios = [];
+  conductores.forEach(c => {
+    if (c.estado !== 'habilitado') return;
+    const r = calcularConductorMes(c.id, mes, salidas, capacitaciones, cfg);
+    if (r.n === 0) return;
+    if (!r.hayNuevas) return;                 // ya recapacitó y no ha salido de nuevo
+    if (r.puntaje < cfg.puntajeMin) cambios.push({ conductorId: c.id, puntaje: r.puntaje });
+  });
+  return cambios;
+}
+
+/* ---- Autoprueba de fórmulas (no toca la base de datos) ---- */
+function autoPrueba() {
+  const cfg = JSON.parse(JSON.stringify(CFG_DEF));
+  const out = [];
+  const T = new Date(2026, 0, 15, 8).getTime();
+  const sal = [];
+  for (let i = 0; i < 40; i++) {
+    sal.push({ id: 't' + i, ts: T + i * 60000, mes: '2026-01', conductorId: 'A', anulada: false,
+      lona: i < 38, lavado: i < 36, humectacion: i < 34, carga: i < 39 });
+  }
+  const r1 = calcularConductorMes('A', '2026-01', sal, [], cfg);
+  out.push({ nombre: 'Caso de $120.000 (40 salidas: 38 lona, 36 lavado, 34 humectación, 39 carga)',
+    ok: r1.puntaje === 92.5 && r1.pctBono === 60 && r1.bono === 120000,
+    detalle: 'Puntaje ' + r1.puntaje + ' · bono ' + r1.pctBono + ' % · $' + r1.bono });
+
+  const T1 = new Date(2026, 0, 10, 8).getTime();
+  const malas = { lona: false, lavado: false, humectacion: false, carga: false };
+  const buenas = { lona: true, lavado: true, humectacion: true, carga: true };
+  const caps = [ { conductorId: 'B', ts: T1 - 3600000, aprobada: true },
+                 { conductorId: 'B', ts: T1 + 3600000, aprobada: true } ];
+  const s2 = [ Object.assign({ id: 'x1', ts: T1, mes: '2026-01', conductorId: 'B', anulada: false }, malas),
+               Object.assign({ id: 'x2', ts: T1 + 7200000, mes: '2026-01', conductorId: 'B', anulada: false }, buenas) ];
+  const r2 = calcularConductorMes('B', '2026-01', s2, caps, cfg);
+  const r2sin = calcularConductorMes('B', '2026-01', s2, [], cfg);
+  out.push({ nombre: 'Recapacitación: salida mala (0) y luego salida perfecta (100)',
+    ok: r2.puntaje === 80 && r2sin.puntaje === 50,
+    detalle: 'Con ponderación ' + r2.puntaje + ' (antes quedaba en ' + r2sin.puntaje + ')' });
+  const habil = [ { id: 'B', estado: 'habilitado' } ];
+  const cierre = evaluarCierre('2026-01', habil, s2, caps, cfg);
+  out.push({ nombre: 'Tras recapacitar y salir bien, NO vuelve a "Requiere recapacitación"',
+    ok: cierre.length === 0, detalle: cierre.length ? 'Se marcó para recapacitar' : 'Sigue habilitado' });
+  const s3 = [ Object.assign({ id: 'y1', ts: T1 + 7200000, mes: '2026-01', conductorId: 'B', anulada: false }, malas) ];
+  const cierre3 = evaluarCierre('2026-01', habil, s3, caps, cfg);
+  out.push({ nombre: 'Si sale mal DESPUÉS de capacitarse, sí debe recapacitar',
+    ok: cierre3.length === 1, detalle: cierre3.length ? 'Marcado para recapacitar' : 'No se marcó' });
+
+  const L1 = limiteCarga({ tipo: 'sencillo', capacidad: 20, tara: 0 }, cfg);
+  out.push({ nombre: 'Volqueta C2 de 20 t: el límite lo marca la vía (17 t)',
+    ok: L1.limite === 17 && L1.marca === 'via', detalle: 'Límite ' + L1.limite + ' t, lo marca ' + L1.marca });
+  const L2 = limiteCarga({ tipo: 'sencillo', capacidad: 20, tara: 8 }, cfg);
+  out.push({ nombre: 'Mismo camión con 8 t vacío: carga máxima por vía = 9 t',
+    ok: L2.limite === 9 && L2.marca === 'via', detalle: 'Límite ' + L2.limite + ' t' });
+  const L3 = limiteCarga({ tipo: 'sencillo', capacidad: 10, tara: 0 }, cfg);
+  out.push({ nombre: 'Camión de 10 t: el límite lo marca el camión',
+    ok: L3.limite === 10 && L3.marca === 'camion', detalle: 'Límite ' + L3.limite + ' t, lo marca ' + L3.marca });
+  return out;
+}
+// </REGLAS>
+
+/* =========================================================
+   2) DATOS · IndexedDB
+   ========================================================= */
+const DB_NAME = 'volquetas_v2';
+let db = null;
+
+function abrirDB() {
+  return new Promise((res, rej) => {
+    if (!window.indexedDB) { rej(new Error('Este navegador no permite guardar datos (IndexedDB).')); return; }
+    const rq = indexedDB.open(DB_NAME, 1);
+    rq.onupgradeneeded = () => {
+      const d = rq.result;
+      ['conductores', 'camiones', 'capacitaciones', 'salidas'].forEach(s => {
+        if (!d.objectStoreNames.contains(s)) d.createObjectStore(s, { keyPath: 'id' });
+      });
+      if (!d.objectStoreNames.contains('meta')) d.createObjectStore('meta', { keyPath: 'k' });
+    };
+    rq.onsuccess = () => res(rq.result);
+    rq.onerror = () => rej(rq.error || new Error('No se pudo abrir la base de datos.'));
+    rq.onblocked = () => rej(new Error('La base de datos está bloqueada. Cierra otras pestañas de la app.'));
+  });
+}
+
+function tx(store, modo, fn) {
+  return new Promise((res, rej) => {
+    let t, rq;
+    try {
+      t = db.transaction(store, modo);
+      rq = fn(t.objectStore(store));
+    } catch (e) { rej(e); return; }
+    t.oncomplete = () => res(rq && 'result' in rq ? rq.result : undefined);
+    t.onerror = () => rej(t.error);
+    t.onabort = () => rej(t.error || new Error('Operación cancelada'));
+  });
+}
+const dbAll = s => tx(s, 'readonly', st => st.getAll());
+const dbPut = (s, o) => tx(s, 'readwrite', st => st.put(o));
+const dbClear = s => tx(s, 'readwrite', st => st.clear());
+const dbGetMeta = k => tx('meta', 'readonly', st => st.get(k));
+const dbSetMeta = (k, v) => dbPut('meta', { k, v });
+
+/* Estado en memoria */
+const S = {
+  rol: null, vista: 'login', p: {}, pila: [],
+  conductores: [], camiones: [], capacitaciones: [], salidas: [],
+  cfg: null, cierres: {}, sal: null, hmax: 30
+};
+
+function mezclarCfg(g) {
+  const d = JSON.parse(JSON.stringify(CFG_DEF));
+  if (!g) return d;
+  return Object.assign({}, d, g, {
+    pesos: Object.assign({}, d.pesos, g.pesos || {}),
+    limites: Object.assign({}, d.limites, g.limites || {}),
+    escala: (Array.isArray(g.escala) && g.escala.length === 3) ? g.escala : d.escala
+  });
+}
+
+async function cargarTodo() {
+  const r = await Promise.all([dbAll('conductores'), dbAll('camiones'), dbAll('capacitaciones'),
+                               dbAll('salidas'), dbGetMeta('cfg'), dbGetMeta('cierres')]);
+  S.conductores = r[0]; S.camiones = r[1]; S.capacitaciones = r[2]; S.salidas = r[3];
+  S.cfg = mezclarCfg(r[4] && r[4].v);
+  S.cierres = (r[5] && r[5].v) || {};
+}
+
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+/* =========================================================
+   3) INTERFAZ
+   ========================================================= */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g,
+  c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const COP = n => '$' + String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+const NUM = (n, d = 2) => {
+  let s = Number(n).toFixed(d);
+  if (s.indexOf('.') >= 0) s = s.replace(/\.?0+$/, '');
+  return s.replace('.', ',');
+};
+const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+const etiquetaMes = m => { const p = m.split('-'); return MESES[+p[1] - 1] + ' ' + p[0]; };
+const mesActual = () => mesDeTs(Date.now());
+const fmtFecha = ts => new Date(ts).toLocaleString('es-CO', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+const fmtDia = ts => new Date(ts).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' });
+const parseNum = v => { const n = parseFloat(String(v).replace(',', '.')); return isNaN(n) ? null : n; };
+
+/* ---- Íconos (SVG en línea, funcionan sin conexión) ---- */
+const ico = p => '<svg class="i" viewBox="0 0 24 24" aria-hidden="true">' + p + '</svg>';
+const IC = {
+  salida: ico('<path d="M2 7h11v9H2z"/><path d="M13 10h4.5l3.5 3v3h-8z"/><circle cx="6" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/>'),
+  historial: ico('<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4h6v3H9z"/><path d="M8.5 12h7M8.5 16h5"/>'),
+  conductor: ico('<path d="M5 14a7 7 0 0 1 14 0"/><path d="M3 14h18v3H3z"/><path d="M12 7v4"/><circle cx="12" cy="21" r=".6"/>'),
+  camion: ico('<path d="M3 6h10v10H3z"/><path d="M13 9h4l3 3.5V16h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/>'),
+  cap: ico('<path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11.5V16c0 1.5 3 3 6 3s6-1.5 6-3v-4.5"/>'),
+  consolidado: ico('<path d="M4 20V11M10 20V4M16 20v-7M22 20H2"/>'),
+  config: ico('<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/>'),
+  respaldo: ico('<ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>'),
+  check: ico('<path d="M4 12l5 5L20 6"/>'),
+  x: ico('<path d="M6 6l12 12M18 6L6 18"/>'),
+  camera: ico('<path d="M3 8h4l2-3h6l2 3h4v11H3z"/><circle cx="12" cy="13" r="3.5"/>'),
+  back: ico('<path d="M15 5l-7 7 7 7"/>'),
+  logout: ico('<path d="M10 4H5v16h5M15 8l4 4-4 4M19 12H9"/>'),
+  warn: ico('<path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.5"/>'),
+  plus: ico('<path d="M12 5v14M5 12h14"/>'),
+  search: ico('<circle cx="11" cy="11" r="6"/><path d="M20 20l-4-4"/>'),
+  lona: ico('<path d="M3 9h18l-2 9H5z"/><path d="M8 9v9M13 9v9M18 9l-1 9"/>'),
+  lavado: ico('<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 4v5M12 15v5M4 12h5M15 12h5"/>'),
+  humectacion: ico('<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>'),
+  carga: ico('<path d="M12 4v16M6 20h12M5 8h14M5 8l-3 7h6zM19 8l-3 7h6z"/>')
+};
+
+/* ---- Avisos, ventanas y mensajes ---- */
+let _tt = null;
+function toast(msg, tipo) {
+  const t = $('#toast');
+  t.textContent = msg; t.className = 'show ' + (tipo || '');
+  clearTimeout(_tt); _tt = setTimeout(() => { t.className = ''; }, 2800);
+}
+
+function modal(html, botones, cancelable) {
+  return new Promise(res => {
+    const m = $('#modal');
+    m.innerHTML = '<div class="mbox" role="dialog">' + html + '<div class="mbtn">' +
+      botones.map((b, i) => '<button class="btn ' + (b.cls || 'sec') + '" data-m="' + i + '">' + b.t + '</button>').join('') + '</div></div>';
+    m.classList.add('open');
+    const cerrar = v => { m.classList.remove('open'); m.innerHTML = ''; m.onclick = null; res(v); };
+    m.onclick = e => {
+      if (e.target === m && cancelable !== false) { cerrar(null); return; }
+      const b = e.target.closest('[data-m]'); if (!b) return;
+      const d = botones[+b.dataset.m];
+      const v = typeof d.val === 'function' ? d.val() : d.val;
+      if (v !== undefined) cerrar(v);
+    };
+  });
+}
+const confirmar = (titulo, html, okTxt, cls) => modal('<h3>' + titulo + '</h3><div class="mtxt">' + html + '</div>',
+  [{ t: 'Cancelar', cls: 'sec', val: false }, { t: okTxt || 'Aceptar', cls: cls || 'prim', val: true }]);
+const aviso = (titulo, html) => modal('<h3>' + titulo + '</h3><div class="mtxt">' + html + '</div>',
+  [{ t: 'Entendido', cls: 'prim', val: true }]);
+const pedirTexto = (titulo, msg) => modal('<h3>' + titulo + '</h3><div class="mtxt">' + msg +
+  '<textarea id="mtxt" placeholder="Escribe el motivo"></textarea><p id="merr" class="rojo"></p></div>',
+  [{ t: 'Cancelar', cls: 'sec', val: null },
+   { t: 'Confirmar', cls: 'danger', val: () => {
+       const v = $('#mtxt').value.trim();
+       if (v.length < 3) { $('#merr').textContent = 'Escribe el motivo (mínimo 3 letras).'; return undefined; }
+       return v; } }], false);
+const errorDB = e => { console.error(e); toast('Error al guardar: ' + (e && e.message ? e.message : e), 'bad'); };
+
+/* ---- Navegación ---- */
+function go(v, p) {
+  S.pila.push({ v: S.vista, p: S.p });
+  S.vista = v; S.p = p || {};
+  if (v === 'salida') initSalida();
+  try { history.pushState({}, ''); } catch (_) {}
+  render(); window.scrollTo(0, 0);
+}
+function reset(v) { S.pila = []; S.vista = v; S.p = {}; render(); window.scrollTo(0, 0); }
+function atras() {
+  const prev = S.pila.pop();
+  if (prev) { S.vista = prev.v; S.p = prev.p; }
+  else { S.vista = S.rol ? 'home' : 'login'; S.p = {}; }
+  render(); window.scrollTo(0, 0);
+}
+function refrescar() { const y = window.scrollY; render(); window.scrollTo(0, y); }
+
+/* ---- Marco general ---- */
+const TITULOS = { home: 'Panel principal', salida: 'Registrar salida', historial: 'Historial de salidas',
+  conductores: 'Conductores', condForm: 'Conductor', camiones: 'Camiones', camForm: 'Camión',
+  capacitaciones: 'Capacitaciones', consolidado: 'Consolidado y bonos', config: 'Configuración', respaldo: 'Respaldo de datos' };
+
+function cabecera() {
+  if (S.vista === 'login') return '';
+  const esHome = S.vista === 'home';
+  return '<div class="top"><div class="hazard"></div><div class="bar">' +
+    (esHome ? '<div class="ib" style="background:var(--amber);color:#17120a">' + IC.salida + '</div>'
+            : '<button class="ib" data-a="atras" aria-label="Volver">' + IC.back + '</button>') +
+    '<div class="t"><b>' + esc(TITULOS[S.vista] || '') + '</b><small>Cantera Santa Rita · ' +
+    (S.rol === 'admin' ? 'Administrador' : 'Supervisor') + '</small></div>' +
+    '<button class="ib" data-a="salir" aria-label="Salir">' + IC.logout + '</button></div></div>';
+}
+
+function render() {
+  if (!S.rol && S.vista !== 'login') S.vista = 'login';
+  let cuerpo;
+  if ((S.vista === 'consolidado' || S.vista === 'config') && S.rol !== 'admin') {
+    cuerpo = '<div class="aviso bad">' + IC.warn + '<div>Esta sección es solo para el administrador.</div></div>';
+  } else {
+    const f = VISTAS[S.vista] || vHome;
+    cuerpo = f();
+  }
+  $('#app').innerHTML = cabecera() + (S.vista === 'login' ? cuerpo : '<main class="wrap">' + cuerpo + '</main>');
+  const post = POST[S.vista]; if (post) post();
+}
+
+/* ---------- Login ---------- */
+function vLogin() {
+  return '<div class="login"><div class="hazard"></div><div class="login-in">' +
+    '<div class="logo">' + IC.salida + '</div>' +
+    '<h1 class="cond">Control de salidas<br>de volquetas</h1>' +
+    '<p class="muted">Cantera Santa Rita · Bello, Antioquia</p>' +
+    '<form data-f="login" class="card"><label class="lbl" for="pin">PIN de acceso</label>' +
+    '<input id="pin" class="pin" type="password" inputmode="numeric" autocomplete="off" placeholder="••••">' +
+    '<button class="btn prim big" type="submit" style="margin-top:16px">ENTRAR</button></form></div></div>';
+}
+
+/* ---------- Panel principal ---------- */
+const SVG_CANTERA = '<svg class="cantera" viewBox="0 0 360 100" preserveAspectRatio="none" aria-hidden="true">' +
+  '<path d="M0 100V62l38-8 30-20 44-4 28-16 52 10 34 22 44-4 38 16 52-6v48z" fill="#2c343f"/>' +
+  '<path d="M0 100V78l46-6 34-14 40 2 34-12 46 14 40 12 42-6 78 10v22z" fill="#3a2f1f" opacity=".85"/>' +
+  '<path d="M0 100V90l60-4 50-8 60 4 70-6 120 8v16z" fill="#ffb020" opacity=".22"/></svg>';
+
+function statsHoy() {
+  const ini = new Date(); ini.setHours(0, 0, 0, 0);
+  const hoy = S.salidas.filter(s => !s.anulada && s.ts >= ini.getTime());
+  let ok = 0;
+  hoy.forEach(s => CONTROLES.forEach(c => { if (s[c.k]) ok++; }));
+  return { n: hoy.length, cumple: hoy.length ? Math.round(ok / (hoy.length * CONTROLES.length) * 100) : null };
+}
+
+function listaTiles() {
+  const t = [
+    { v: 'salida', ic: IC.salida, n: 'Registrar salida', s: 'Controles en la portería' },
+    { v: 'historial', ic: IC.historial, n: 'Historial de salidas', s: 'Fallas, fotos y detalle' },
+    { v: 'conductores', ic: IC.conductor, n: 'Conductores', s: S.conductores.length + ' registrados' },
+    { v: 'camiones', ic: IC.camion, n: 'Camiones', s: S.camiones.length + ' registrados' },
+    { v: 'capacitaciones', ic: IC.cap, n: 'Capacitaciones', s: 'Habilitar conductores' }
+  ];
+  if (S.rol === 'admin') {
+    t.push({ v: 'consolidado', ic: IC.consolidado, n: 'Consolidado y bonos', s: 'Puntajes y pagos' });
+    t.push({ v: 'config', ic: IC.config, n: 'Configuración', s: 'Pesos, bonos y límites' });
+  }
+  t.push({ v: 'respaldo', ic: IC.respaldo, n: 'Respaldo de datos', s: 'Exportar e importar' });
+  return t;
+}
+
+function vHome() {
+  const h = statsHoy();
+  const bloq = S.conductores.filter(c => c.estado !== 'habilitado').length;
+  const fecha = new Date().toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' });
+  return '<section class="hero">' + SVG_CANTERA + '<div class="hero-in"><small class="cond">' + esc(fecha) + '</small>' +
+    '<h1 class="cond">' + (S.rol === 'admin' ? 'Ingeniería' : 'Portería') + '</h1><div class="kpis">' +
+    '<div><b>' + h.n + '</b><span>salidas hoy</span></div>' +
+    '<div><b>' + (h.cumple === null ? '—' : h.cumple + '%') + '</b><span>controles cumplidos</span></div>' +
+    '<div><b>' + bloq + '</b><span>sin habilitar</span></div></div></div></section>' +
+    '<div class="tiles">' + listaTiles().map(t =>
+      '<button class="tile" data-a="ir" data-v="' + t.v + '"><span class="ic">' + t.ic + '</span><span><b>' +
+      t.n + '</b><small>' + t.s + '</small></span></button>').join('') + '</div>';
+}
+
+/* ---------- Registrar salida ---------- */
+function initSalida() {
+  S.sal = { cid: null, camId: null, lona: null, lavado: null, humectacion: null, peso: '', obs: '', foto: null, q: '' };
+}
+const camionSel = () => S.camiones.find(c => c.id === S.sal.camId);
+
+function badgeEstado(e) {
+  if (e === 'habilitado') return '<span class="chip ok">Habilitado</span>';
+  if (e === 'recap') return '<span class="chip bad">Requiere recapacitación</span>';
+  return '<span class="chip warn">Pendiente de capacitación</span>';
+}
+
+function htmlListaCond() {
+  const q = S.sal.q.trim().toLowerCase();
+  const orden = { habilitado: 0, recap: 1, pendiente: 2 };
+  const l = S.conductores.filter(c => !q || c.nombre.toLowerCase().indexOf(q) >= 0 || String(c.cedula).indexOf(q) >= 0)
+    .sort((a, b) => (orden[a.estado] - orden[b.estado]) || a.nombre.localeCompare(b.nombre));
+  if (!l.length) return '<p class="vacio">' + (S.conductores.length ? 'Nadie coincide con la búsqueda.' : 'Aún no hay conductores. Créalos en "Conductores".') + '</p>';
+  return l.map(c => '<button class="opt ' + (S.sal.cid === c.id ? 'sel' : '') + '" data-a="selCond" data-id="' + c.id + '"><span><b>' +
+    esc(c.nombre) + '</b><small>CC ' + esc(c.cedula) + '</small></span>' + badgeEstado(c.estado) + '</button>').join('');
+}
+
+function htmlAvisoCond() {
+  const c = S.conductores.find(x => x.id === S.sal.cid);
+  if (!c) return '';
+  if (c.estado === 'habilitado') return '<div class="aviso ok">' + IC.check + '<div>' + esc(c.nombre) + ' está habilitado para salir.</div></div>';
+  const m = c.estado === 'recap' ? 'Su puntaje del mes quedó por debajo del mínimo: debe repetir la capacitación.'
+                                 : 'Aún no ha aprobado la capacitación.';
+  return '<div class="aviso bad">' + IC.warn + '<div><b>No puede registrar salidas.</b> ' + m + '</div></div>';
+}
+
+function ctlHtml(c) {
+  const v = S.sal[c.k];
+  return '<div class="ctl ' + (v === true ? 'si' : v === false ? 'no' : '') + '"><div class="ctl-t">' + IC[c.k] + '<span>' + c.nombre + '</span></div>' +
+    '<div class="seg"><button data-a="ctl" data-k="' + c.k + '" data-v="1" class="' + (v === true ? 'on' : '') + '">' + IC.check + ' CUMPLE</button>' +
+    '<button data-a="ctl" data-k="' + c.k + '" data-v="0" class="' + (v === false ? 'on bad' : '') + '">' + IC.x + ' NO CUMPLE</button></div></div>';
+}
+
+/* Texto que explica qué límite de carga aplica y por qué */
+function textoLimite(cam) {
+  const L = limiteCarga(cam, S.cfg);
+  let t = 'El camión puede cargar <b>' + NUM(L.capacidad) + ' t</b>. La vía permite <b>' + NUM(L.pbv) +
+    ' t</b> de peso bruto (' + (TIPOS[cam.tipo] || '') + ')';
+  if (L.conTara) t += ', menos ' + NUM(L.tara) + ' t del camión vacío = <b>' + NUM(L.legal) + ' t</b> de carga';
+  t += '. ';
+  if (L.marca === 'via') {
+    t += '<b>Límite que aplica: ' + NUM(L.limite) + ' t.</b> Aunque el camión resista más, el límite lo marca la carretera, no el camión.';
+  } else {
+    t += '<b>Límite que aplica: ' + NUM(L.limite) + ' t</b> (lo marca el camión; la vía permitiría hasta ' + NUM(L.legal) + ' t).';
+  }
+  if (!L.conTara) t += ' <span class="muted">Sin peso vacío registrado: el límite de la vía se compara con el peso ingresado.</span>';
+  return t;
+}
+
+function htmlMedidor() {
+  const cam = camionSel();
+  if (!cam) return '<p class="nota">Elige un camión para ver el límite de carga.</p>';
+  let h = '<div class="limbox">' + textoLimite(cam) + '</div>';
+  const peso = parseNum(S.sal.peso);
+  if (peso === null || peso <= 0) return h;
+  const ev = evaluarCarga(peso, cam, S.cfg);
+  const max = Math.max(ev.limite * 1.3, peso * 1.05, 0.1);
+  const pc = x => Math.max(0, Math.min(100, x / max * 100));
+  let zg = ev.limite, zy = 0;
+  if (ev.rec > 0 && ev.rec < ev.limite) { zg = ev.rec; zy = ev.limite - ev.rec; }
+  h += '<div class="medidor"><i class="zg" style="width:' + pc(zg) + '%"></i><i class="zy" style="width:' + pc(zy) + '%"></i>' +
+    '<i class="zr" style="width:' + (100 - pc(zg) - pc(zy)) + '%"></i><span class="mk" style="left:' + pc(peso) + '%"></span></div>' +
+    '<div class="escala"><em style="left:' + Math.min(88, Math.max(12, pc(ev.limite))) + '%">límite ' + NUM(ev.limite) + ' t</em></div>';
+  if (ev.cumple) {
+    h += '<div class="veredicto ok">' + IC.check + '<div>CUMPLE · ' + NUM(peso) + ' t de ' + NUM(ev.limite) + ' t permitidas' +
+      (ev.sobreRec ? '<small>Pasa la referencia recomendada de ' + NUM(ev.rec) + ' t (genera más desgaste en la vía).</small>' : '') + '</div></div>';
+  } else {
+    h += '<div class="veredicto no">' + IC.x + '<div>NO CUMPLE · excede en ' + NUM(ev.exceso > 0 ? ev.exceso : peso - ev.rec) + ' t' +
+      '<small>' + (ev.exceso > 0 ? (ev.marca === 'via' ? 'Pasa el límite de la vía para este tipo de camión.' : 'Pasa la capacidad del camión.')
+                                 : 'Pasa la referencia vial recomendada, que la empresa exige.') + '</small></div></div>';
+  }
+  return h;
+}
+
+function vSalida() {
+  const s = S.sal;
+  const opts = S.camiones.map(c => '<option value="' + c.id + '"' + (s.camId === c.id ? ' selected' : '') + '>' +
+    esc(c.placa) + ' · ' + esc(TIPOS[c.tipo] || '') + ' · ' + NUM(c.capacidad) + ' t</option>').join('');
+  return '<h1 class="tit">Registrar salida</h1>' +
+    '<section class="card"><h2 class="paso"><b>1</b>Conductor</h2>' +
+    '<div class="buscar">' + IC.search + '<input id="q" data-i="busca" placeholder="Buscar por nombre o cédula" autocomplete="off" value="' + esc(s.q) + '"></div>' +
+    '<div id="listaCond" class="lista-sel">' + htmlListaCond() + '</div><div id="avisoCond">' + htmlAvisoCond() + '</div></section>' +
+    '<section class="card"><h2 class="paso"><b>2</b>Camión</h2>' +
+    (S.camiones.length ? '<select id="selCam" data-c="cam"><option value="">— Elige el camión —</option>' + opts + '</select>'
+                       : '<p class="muted">Aún no hay camiones. Créalos en "Camiones".</p>') + '</section>' +
+    '<section class="card"><h2 class="paso"><b>3</b>Controles de prevención</h2>' + CONTROLES.slice(0, 3).map(ctlHtml).join('') + '</section>' +
+    '<section class="card"><h2 class="paso"><b>4</b>Carga</h2><label class="lbl" for="peso">Peso de báscula (toneladas)</label>' +
+    '<input id="peso" data-i="peso" inputmode="decimal" placeholder="Ej: 15,5" autocomplete="off" value="' + esc(s.peso) + '">' +
+    '<div id="medidor">' + htmlMedidor() + '</div></section>' +
+    '<section class="card"><h2 class="paso"><b>5</b>Evidencia y observaciones</h2>' +
+    '<label class="fotoBtn" for="fotoIn">' + IC.camera + (s.foto ? ' Cambiar foto' : ' Tomar foto (opcional)') + '</label>' +
+    '<input id="fotoIn" type="file" accept="image/*" capture="environment" data-c="foto" hidden>' +
+    (s.foto ? '<img class="prevFoto" src="' + s.foto + '" alt="Vista previa de la foto">' : '') +
+    '<label class="lbl" for="obs">Observaciones (opcional)</label><textarea id="obs" data-i="obs" placeholder="Ej: llanta delantera con barro">' + esc(s.obs) + '</textarea></section>' +
+    '<button class="btn prim big" data-a="guardarSalida">REVISAR Y GUARDAR</button>';
+}
+
+function comprimirImagen(file, max, q) {
+  return new Promise((res, rej) => {
+    const img = new Image(); const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const k = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url); res(c.toDataURL('image/jpeg', q));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('No se pudo leer la foto.')); };
+    img.src = url;
+  });
+}
+
+async function guardarSalida() {
+  const s = S.sal, err = [];
+  const cond = S.conductores.find(c => c.id === s.cid), cam = camionSel(), peso = parseNum(s.peso);
+  if (!cond) err.push('Elige el conductor.');
+  else if (cond.estado !== 'habilitado') err.push('El conductor no está habilitado para salir.');
+  if (!cam) err.push('Elige el camión.');
+  CONTROLES.slice(0, 3).forEach(c => { if (s[c.k] === null) err.push('Marca si cumple: ' + c.nombre + '.'); });
+  if (peso === null || peso <= 0) err.push('El peso debe ser mayor a cero.');
+  if (err.length) { aviso('Falta completar', '<ul>' + err.map(e => '<li>' + e + '</li>').join('') + '</ul>'); return; }
+  const ev = evaluarCarga(peso, cam, S.cfg);
+  const fila = (n, ok) => '<li>' + n + ': <b class="' + (ok ? '' : 'rojo') + '">' + (ok ? 'Cumple' : 'NO cumple') + '</b></li>';
+  const ok = await confirmar('Confirmar salida',
+    '<p><b>' + esc(cond.nombre) + '</b> · ' + esc(cam.placa) + '</p><ul>' +
+    fila('Lona o malla', s.lona) + fila('Lavado de llantas', s.lavado) + fila('Humectación', s.humectacion) +
+    fila('Carga (' + NUM(peso) + ' t de ' + NUM(ev.limite) + ' t)', ev.cumple) + '</ul>' +
+    '<p class="muted">Una vez guardada no se puede editar; solo anular con motivo.</p>', 'GUARDAR SALIDA');
+  if (!ok) return;
+  const ts = Date.now();
+  const reg = { id: uid(), ts, mes: mesDeTs(ts), conductorId: cond.id, conductorNombre: cond.nombre,
+    camionId: cam.id, placa: cam.placa, lona: s.lona, lavado: s.lavado, humectacion: s.humectacion,
+    carga: ev.cumple, peso, capacidad: ev.capacidad, limite: ev.limite, obs: s.obs.trim(), foto: s.foto, anulada: false };
+  try {
+    await dbPut('salidas', reg); S.salidas.push(reg);
+    toast('Salida guardada', 'ok'); initSalida(); render(); window.scrollTo(0, 0);
+  } catch (e) { errorDB(e); }
+}
+
+/* ---------- Historial de salidas (fallas y fotos) ---------- */
+function mesesDisponibles() {
+  const set = {}; set[mesActual()] = 1;
+  S.salidas.forEach(s => { set[s.mes] = 1; });
+  return Object.keys(set).sort().reverse();
+}
+
+function barrasFallas(r, n) {
+  return CONTROLES.map(c => {
+    const pc = r.pct[c.k];
+    const cls = pc >= 90 ? '' : pc >= 70 ? 'm' : 'p';
+    return '<div class="barra"><div class="h"><span>' + c.nombre + '</span><span><b>' + NUM(pc, 1) + '%</b> · ' +
+      r.fallas[c.k] + ' falla' + (r.fallas[c.k] === 1 ? '' : 's') + '</span></div><div class="b"><i class="' + cls + '" style="width:' + pc + '%"></i></div></div>';
+  }).join('');
+}
+
+function cardSalida(s) {
+  const fallo = CONTROLES.filter(c => !s[c.k]);
+  const estado = s.anulada ? '<span class="chip gris">ANULADA</span>'
+    : fallo.length ? '<span class="chip bad">' + fallo.length + ' falla' + (fallo.length > 1 ? 's' : '') + '</span>'
+    : '<span class="chip ok">Todo en regla</span>';
+  return '<article class="sal ' + (s.anulada ? 'anul' : '') + '"><header><div><b>' + esc(s.conductorNombre) + '</b><small>' +
+    fmtFecha(s.ts) + ' · ' + esc(s.placa) + '</small></div>' + estado + '</header>' +
+    '<div class="chips">' + CONTROLES.map(c => '<span class="chip ' + (s[c.k] ? 'ok' : 'bad') + '">' + (s[c.k] ? IC.check : IC.x) + ' ' + c.corto + '</span>').join('') + '</div>' +
+    '<p>Peso: <b>' + NUM(s.peso) + ' t</b> · límite ' + NUM(s.limite) + ' t' +
+    (s.peso > s.limite ? ' · <span class="rojo">excede ' + NUM(s.peso - s.limite) + ' t</span>' : '') + '</p>' +
+    (fallo.length && !s.anulada ? '<p class="falla">Falló: <b>' + fallo.map(c => c.corto).join(', ') + '</b></p>' : '') +
+    (s.obs ? '<p class="obs">“' + esc(s.obs) + '”</p>' : '') +
+    (s.anulada ? '<p class="obs">Motivo de anulación: ' + esc(s.motivoAnulacion) + '</p>' : '') +
+    '<div class="acc">' + (s.foto ? '<button class="foto" data-a="verFoto" data-id="' + s.id + '"><img src="' + s.foto + '" alt="Foto de evidencia"><span>' + IC.camera + ' Ver foto</span></button>'
+                                  : '<span class="muted sin">Sin foto</span>') +
+    (!s.anulada ? '<button class="btn sec sm" data-a="anular" data-id="' + s.id + '">Anular</button>' : '') + '</div></article>';
+}
+
+function vHistorial() {
+  const mes = S.p.mes || mesActual(), cid = S.p.cid || '';
+  const lista = S.salidas.filter(s => s.mes === mes && (!cid || s.conductorId === cid)).sort((a, b) => b.ts - a.ts);
+  const validas = lista.filter(s => !s.anulada);
+  let resumen;
+  if (cid) {
+    const r = calcularConductorMes(cid, mes, S.salidas, S.capacitaciones, S.cfg);
+    const c = S.conductores.find(x => x.id === cid);
+    resumen = '<section class="card"><h2 class="paso" style="margin-bottom:6px">En qué falla ' + esc(c ? c.nombre : '') + '</h2>' +
+      (r.n ? '<p class="muted">' + r.n + ' salida' + (r.n === 1 ? '' : 's') + ' en ' + etiquetaMes(mes) + ' · puntaje <b style="color:var(--amber)">' + NUM(r.puntaje, 1) +
+        '</b> · bono ' + r.pctBono + '% (' + COP(r.bono) + ')</p>' + barrasFallas(r) +
+        (r.ponderadas ? '<p class="nota">⚖ ' + r.ponderadas + ' salida(s) anteriores a su última capacitación pesan solo ' + S.cfg.pesoPrevias + ' % en el puntaje.</p>' : '')
+        : '<p class="muted">Sin salidas en este mes.</p>') + '</section>';
+  } else {
+    const fall = {}; CONTROLES.forEach(c => { fall[c.k] = validas.filter(s => !s[c.k]).length; });
+    resumen = '<section class="card"><h2 class="paso" style="margin-bottom:6px">Fallas de ' + etiquetaMes(mes) + '</h2>' +
+      (validas.length ? '<p class="muted">' + validas.length + ' salidas válidas</p>' + CONTROLES.map(c => {
+        const pc = (1 - fall[c.k] / validas.length) * 100, cls = pc >= 90 ? '' : pc >= 70 ? 'm' : 'p';
+        return '<div class="barra"><div class="h"><span>' + c.nombre + '</span><span><b>' + fall[c.k] + '</b> falla' + (fall[c.k] === 1 ? '' : 's') +
+          ' · ' + NUM(pc, 1) + '% cumple</span></div><div class="b"><i class="' + cls + '" style="width:' + pc + '%"></i></div></div>';
+      }).join('') : '<p class="muted">Sin salidas en este mes.</p>') + '</section>';
+  }
+  const conds = S.conductores.slice().sort((a, b) => a.nombre.localeCompare(b.nombre));
+  const mostrar = lista.slice(0, S.hmax);
+  return '<h1 class="tit">Historial de salidas</h1><div class="fila" style="margin-bottom:14px">' +
+    '<select data-c="hMes" aria-label="Mes">' + mesesDisponibles().map(m => '<option value="' + m + '"' + (m === mes ? ' selected' : '') + '>' + etiquetaMes(m) + '</option>').join('') + '</select>' +
+    '<select data-c="hCond" aria-label="Conductor"><option value="">Todos</option>' + conds.map(c => '<option value="' + c.id + '"' + (c.id === cid ? ' selected' : '') + '>' + esc(c.nombre) + '</option>').join('') + '</select></div>' +
+    resumen + (mostrar.length ? mostrar.map(cardSalida).join('') : '<p class="vacio">No hay salidas con este filtro.</p>') +
+    (lista.length > S.hmax ? '<button class="btn sec" data-a="masSalidas">Ver más (' + (lista.length - S.hmax) + ' restantes)</button>' : '');
+}
+
+/* ---------- Conductores ---------- */
+function vConductores() {
+  const mes = mesActual();
+  const filas = S.conductores.slice().sort((a, b) => a.nombre.localeCompare(b.nombre)).map(c => {
+    const r = calcularConductorMes(c.id, mes, S.salidas, S.capacitaciones, S.cfg);
+    const cam = S.camiones.find(x => x.conductorId === c.id);
+    return '<article class="item"><header><div><b>' + esc(c.nombre) + '</b><small>CC ' + esc(c.cedula) + ' · ' + esc(c.telefono) + '</small></div>' + badgeEstado(c.estado) + '</header>' +
+      '<p class="muted">' + (cam ? 'Camión ' + esc(cam.placa) : 'Sin camión asignado') + (c.fechaHab ? ' · Habilitado ' + fmtDia(c.fechaHab) : '') + '</p>' +
+      (r.n ? '<p>Este mes: <b>' + r.n + '</b> salidas · puntaje <b>' + NUM(r.puntaje, 1) + '</b></p>' : '') +
+      '<div class="acc"><button class="btn sec sm" data-a="verCond" data-id="' + c.id + '">Ver fallas y salidas</button>' +
+      '<button class="btn sec sm" data-a="editCond" data-id="' + c.id + '">Editar</button></div></article>';
+  }).join('');
+  return '<h1 class="tit">Conductores</h1><button class="btn prim big" data-a="nuevoCond">' + IC.plus + ' NUEVO CONDUCTOR</button>' +
+    (filas || '<p class="vacio">Aún no hay conductores.</p>');
+}
+
+function vCondForm() {
+  const c = S.conductores.find(x => x.id === S.p.id) || {};
+  return '<h1 class="tit">' + (c.id ? 'Editar conductor' : 'Nuevo conductor') + '</h1><section class="card">' +
+    '<label class="lbl" for="fNom">Nombre completo</label><input id="fNom" value="' + esc(c.nombre || '') + '" autocomplete="off">' +
+    '<label class="lbl" for="fCed">Cédula</label><input id="fCed" inputmode="numeric" value="' + esc(c.cedula || '') + '" autocomplete="off">' +
+    '<label class="lbl" for="fTel">Teléfono</label><input id="fTel" inputmode="tel" value="' + esc(c.telefono || '') + '" autocomplete="off">' +
+    (c.id ? '' : '<p class="nota">Queda <b>pendiente de capacitación</b> hasta que apruebe una.</p>') + '</section>' +
+    '<button class="btn prim big" data-a="guardarCond" data-id="' + (c.id || '') + '">GUARDAR</button>';
+}
+
+async function guardarCond(id) {
+  const nombre = $('#fNom').value.trim().replace(/\s+/g, ' '), ced = $('#fCed').value.replace(/\D/g, ''), tel = $('#fTel').value.replace(/[^\d+]/g, '');
+  const err = [];
+  if (nombre.length < 5) err.push('Escribe el nombre completo.');
+  if (ced.length < 5 || ced.length > 12) err.push('La cédula debe tener entre 5 y 12 dígitos.');
+  if (S.conductores.some(c => c.cedula === ced && c.id !== id)) err.push('Ya existe un conductor con esa cédula.');
+  if (tel.replace(/\D/g, '').length < 7) err.push('Escribe un teléfono válido.');
+  if (err.length) { aviso('Revisa los datos', '<ul>' + err.map(e => '<li>' + e + '</li>').join('') + '</ul>'); return; }
+  try {
+    let c = S.conductores.find(x => x.id === id);
+    if (c) { c.nombre = nombre; c.cedula = ced; c.telefono = tel; }
+    else { c = { id: uid(), nombre, cedula: ced, telefono: tel, estado: 'pendiente', fechaHab: null }; S.conductores.push(c); }
+    await dbPut('conductores', c);
+    toast('Conductor guardado', 'ok'); atras();
+  } catch (e) { errorDB(e); }
+}
+
+/* ---------- Camiones ---------- */
+function vCamiones() {
+  const filas = S.camiones.slice().sort((a, b) => a.placa.localeCompare(b.placa)).map(c => {
+    const L = limiteCarga(c, S.cfg), cond = S.conductores.find(x => x.id === c.conductorId);
+    return '<article class="item"><header><div><b>' + esc(c.placa) + '</b><small>' + esc(TIPOS[c.tipo] || '') + ' · capacidad ' + NUM(c.capacidad) + ' t' +
+      (c.tara ? ' · vacío ' + NUM(c.tara) + ' t' : '') + '</small></div>' +
+      '<span class="chip ' + (L.marca === 'via' ? 'warn' : 'gris') + '">Límite ' + NUM(L.limite) + ' t</span></header>' +
+      '<p class="nota">' + textoLimite(c) + '</p><p class="muted">' + (cond ? 'Conductor: ' + esc(cond.nombre) : 'Sin conductor asignado') + '</p>' +
+      '<div class="acc"><button class="btn sec sm" data-a="editCam" data-id="' + c.id + '">Editar</button></div></article>';
+  }).join('');
+  return '<h1 class="tit">Camiones</h1><button class="btn prim big" data-a="nuevoCam">' + IC.plus + ' NUEVO CAMIÓN</button>' +
+    (filas || '<p class="vacio">Aún no hay camiones.</p>');
+}
+
+function vCamForm() {
+  const c = S.camiones.find(x => x.id === S.p.id) || { tipo: 'sencillo' };
+  return '<h1 class="tit">' + (c.id ? 'Editar camión' : 'Nuevo camión') + '</h1><section class="card">' +
+    '<label class="lbl" for="cPlaca">Placa</label><input id="cPlaca" value="' + esc(c.placa || '') + '" placeholder="Ej: TQZ-123" autocapitalize="characters" autocomplete="off">' +
+    '<label class="lbl" for="cTipo">Tipo de camión</label><select id="cTipo" data-c="camPrev">' +
+    Object.keys(TIPOS).map(k => '<option value="' + k + '"' + (c.tipo === k ? ' selected' : '') + '>' + TIPOS[k] + '</option>').join('') + '</select>' +
+    '<div class="fila"><div><label class="lbl" for="cCap">Capacidad de carga (t)</label><input id="cCap" data-i="camPrev" inputmode="decimal" value="' + (c.capacidad ? NUM(c.capacidad) : '') + '" placeholder="Ej: 20"></div>' +
+    '<div><label class="lbl" for="cTara">Peso vacío (t) opcional</label><input id="cTara" data-i="camPrev" inputmode="decimal" value="' + (c.tara ? NUM(c.tara) : '') + '" placeholder="Ej: 8"></div></div>' +
+    '<div id="prevLimite" class="limbox"></div>' +
+    '<label class="lbl" for="cCond">Conductor asignado (opcional)</label><select id="cCond"><option value="">— Sin asignar —</option>' +
+    S.conductores.map(x => '<option value="' + x.id + '"' + (c.conductorId === x.id ? ' selected' : '') + '>' + esc(x.nombre) + '</option>').join('') + '</select></section>' +
+    '<button class="btn prim big" data-a="guardarCam" data-id="' + (c.id || '') + '">GUARDAR</button>';
+}
+
+function camPrev() {
+  const t = { tipo: $('#cTipo').value, capacidad: parseNum($('#cCap').value) || 0, tara: parseNum($('#cTara').value) || 0 };
+  $('#prevLimite').innerHTML = t.capacidad > 0 ? textoLimite(t) : '<span class="muted">Escribe la capacidad para ver el límite que se aplicará.</span>';
+}
+
+async function guardarCam(id) {
+  const raw = $('#cPlaca').value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const placa = raw.length === 6 ? raw.slice(0, 3) + '-' + raw.slice(3) : raw;
+  const tipo = $('#cTipo').value, cap = parseNum($('#cCap').value), tara = parseNum($('#cTara').value) || 0, cond = $('#cCond').value;
+  const err = [];
+  if (raw.length < 5 || raw.length > 7) err.push('Escribe una placa válida (ej: TQZ-123).');
+  if (S.camiones.some(c => c.placa.replace(/[^A-Z0-9]/g, '') === raw && c.id !== id)) err.push('Ya existe un camión con esa placa.');
+  if (cap === null || cap <= 0) err.push('La capacidad debe ser mayor a cero.');
+  if (tara < 0) err.push('El peso vacío no puede ser negativo.');
+  if (tara >= S.cfg.limites[tipo]) err.push('El peso vacío no puede ser igual o mayor al límite de la vía (' + NUM(S.cfg.limites[tipo]) + ' t).');
+  if (err.length) { aviso('Revisa los datos', '<ul>' + err.map(e => '<li>' + e + '</li>').join('') + '</ul>'); return; }
+  try {
+    let c = S.camiones.find(x => x.id === id);
+    if (c) Object.assign(c, { placa, tipo, capacidad: cap, tara, conductorId: cond || null });
+    else { c = { id: uid(), placa, tipo, capacidad: cap, tara, conductorId: cond || null }; S.camiones.push(c); }
+    await dbPut('camiones', c);
+    toast('Camión guardado', 'ok'); atras();
+  } catch (e) { errorDB(e); }
+}
+
+/* ---------- Capacitaciones ---------- */
+function vCapacitaciones() {
+  const conds = S.conductores.slice().sort((a, b) => a.nombre.localeCompare(b.nombre));
+  const hist = S.capacitaciones.slice().sort((a, b) => b.ts - a.ts).map(c => {
+    const d = S.conductores.find(x => x.id === c.conductorId);
+    return '<article class="item"><header><div><b>' + esc(d ? d.nombre : 'Conductor eliminado') + '</b><small>' + fmtFecha(c.ts) + ' · nota ' + c.nota + '</small></div>' +
+      '<span class="chip ' + (c.aprobada ? 'ok' : 'bad') + '">' + (c.aprobada ? 'Aprobó' : 'No aprobó') + '</span></header></article>';
+  }).join('');
+  return '<h1 class="tit">Capacitaciones</h1><section class="card">' +
+    '<label class="lbl" for="kCond">Conductor</label><select id="kCond"><option value="">— Elige el conductor —</option>' +
+    conds.map(c => '<option value="' + c.id + '">' + esc(c.nombre) + ' · ' + (c.estado === 'habilitado' ? 'habilitado' : c.estado === 'recap' ? 'recapacitar' : 'pendiente') + '</option>').join('') + '</select>' +
+    '<label class="lbl" for="kNota">Nota de la evaluación (0 a 100)</label><input id="kNota" inputmode="numeric" placeholder="Ej: 85">' +
+    '<p class="nota">Aprueba con <b>' + S.cfg.notaMin + '</b> o más. Si aprueba, queda <b>habilitado</b> automáticamente.</p></section>' +
+    '<button class="btn prim big" data-a="guardarCap">REGISTRAR CAPACITACIÓN</button>' +
+    '<h2 class="paso" style="margin-top:8px">Historial</h2>' + (hist || '<p class="vacio">Aún no hay capacitaciones registradas.</p>');
+}
+
+async function guardarCap() {
+  const cid = $('#kCond').value, nota = parseNum($('#kNota').value);
+  const err = [];
+  if (!cid) err.push('Elige el conductor.');
+  if (nota === null || nota < 0 || nota > 100) err.push('La nota debe estar entre 0 y 100.');
+  if (err.length) { aviso('Revisa los datos', '<ul>' + err.map(e => '<li>' + e + '</li>').join('') + '</ul>'); return; }
+  const c = S.conductores.find(x => x.id === cid);
+  const aprobada = nota >= S.cfg.notaMin;
+  const reg = { id: uid(), conductorId: cid, ts: Date.now(), nota, aprobada };
+  try {
+    await dbPut('capacitaciones', reg); S.capacitaciones.push(reg);
+    if (aprobada) { c.estado = 'habilitado'; c.fechaHab = reg.ts; await dbPut('conductores', c); }
+    render();
+    aviso(aprobada ? 'Aprobó la capacitación' : 'No aprobó',
+      aprobada ? '<p><b>' + esc(c.nombre) + '</b> sacó ' + nota + ' y quedó <b>habilitado</b> para registrar salidas.</p>'
+               : '<p><b>' + esc(c.nombre) + '</b> sacó ' + nota + ' (mínimo ' + S.cfg.notaMin + '). Debe repetir la capacitación.</p>');
+  } catch (e) { errorDB(e); }
+}
+
+/* ---------- Consolidado y bonos ---------- */
+function filasMes(mes) {
+  return S.conductores.map(c => ({ c, r: calcularConductorMes(c.id, mes, S.salidas, S.capacitaciones, S.cfg) }))
+    .filter(x => x.r.n > 0).sort((a, b) => b.r.puntaje - a.r.puntaje || b.r.n - a.r.n);
+}
+
+function svgPareto(p, claro) {
+  if (!p.total) return '<p class="muted">Sin incumplimientos este mes.</p>';
+  const col = claro ? { t: '#111', b: '#e08a00', l: '#c0392b', g: '#bbb' } : { t: 'var(--txt)', b: 'var(--amber)', l: 'var(--orange)', g: 'var(--line)' };
+  const W = 340, H = 220, pl = 12, pr = 30, pt = 22, pb = 40;
+  const n = p.datos.length, bw = (W - pl - pr) / n, max = Math.max.apply(null, p.datos.map(d => d.fallas)) || 1;
+  const ph = H - pt - pb;
+  let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" role="img" aria-label="Pareto de incumplimientos">';
+  [0, 50, 100].forEach(v => {
+    const y = pt + (1 - v / 100) * ph;
+    s += '<line x1="' + pl + '" x2="' + (W - pr) + '" y1="' + y + '" y2="' + y + '" stroke="' + col.g + '" stroke-width="1"/>' +
+      '<text x="' + (W - pr + 4) + '" y="' + (y + 4) + '" font-size="10" fill="' + col.t + '">' + v + '%</text>';
+  });
+  let pts = '';
+  p.datos.forEach((d, i) => {
+    const x = pl + i * bw + bw * 0.15, w = bw * 0.7, h = d.fallas / max * ph, y = pt + ph - h;
+    s += '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + Math.max(h, 1) + '" rx="5" fill="' + col.b + '"/>' +
+      '<text x="' + (x + w / 2) + '" y="' + (y - 5) + '" font-size="12" font-weight="700" text-anchor="middle" fill="' + col.t + '">' + d.fallas + '</text>' +
+      '<text x="' + (x + w / 2) + '" y="' + (H - 20) + '" font-size="11" text-anchor="middle" fill="' + col.t + '">' + esc(d.nombre) + '</text>';
+    pts += (x + w / 2) + ',' + (pt + (1 - d.acum / 100) * ph) + ' ';
+  });
+  s += '<polyline points="' + pts.trim() + '" fill="none" stroke="' + col.l + '" stroke-width="2.5"/>';
+  p.datos.forEach((d, i) => {
+    const cx = pl + i * bw + bw / 2, cy = pt + (1 - d.acum / 100) * ph;
+    s += '<circle cx="' + cx + '" cy="' + cy + '" r="4" fill="' + col.l + '"/>';
+  });
+  return s + '</svg>';
+}
+
+function vConsolidado() {
+  const mes = S.p.mes || mesActual();
+  const filas = filasMes(mes);
+  const glob = cumplimientoGlobal(mes, S.salidas, S.cfg), ant = cumplimientoGlobal(mesAnterior(mes), S.salidas, S.cfg);
+  const par = calcularPareto(mes, S.salidas);
+  const costo = filas.reduce((a, x) => a + x.r.bono, 0);
+  const totalSal = filas.reduce((a, x) => a + x.r.n, 0);
+  let delta = '<em class="muted">Sin mes anterior para comparar</em>';
+  if (glob !== null && ant !== null) {
+    const d = redondear(glob - ant, 1);
+    delta = '<em class="' + (d >= 0 ? 'up' : 'down') + '">' + (d >= 0 ? '▲ ' : '▼ ') + NUM(Math.abs(d), 1) + ' pts vs ' + etiquetaMes(mesAnterior(mes)) + '</em>';
+  }
+  const top = par.total ? par.datos[0] : null;
+  const cierre = S.cierres[mes];
+  const tabla = filas.length ? '<div class="tabla-w"><table><thead><tr><th>#</th><th class="n">Conductor</th><th>Sal.</th>' +
+    CONTROLES.map(c => '<th>% ' + c.corto + '</th>').join('') + '<th>Puntaje</th><th>% Bono</th><th>Bono</th></tr></thead><tbody>' +
+    filas.map((x, i) => '<tr class="fila-c" data-a="verCondMes" data-id="' + x.c.id + '" data-mes="' + mes + '"><td><span class="pos">' + (i + 1) + '</span></td>' +
+      '<td class="n"><b>' + esc(x.c.nombre) + '</b>' + (x.c.estado === 'recap' ? '<br><span class="chip bad">Recapacitar</span>' : '') + (x.r.ponderadas ? ' <span title="Incluye ponderación">⚖</span>' : '') + '</td>' +
+      '<td>' + x.r.n + '</td>' + CONTROLES.map(c => '<td>' + NUM(x.r.pct[c.k], 1) + '</td>').join('') +
+      '<td><b>' + NUM(x.r.puntaje, 1) + '</b></td><td>' + x.r.pctBono + '%</td><td><b>' + COP(x.r.bono) + '</b></td></tr>').join('') +
+    '</tbody></table></div><p class="nota">Toca un conductor para ver cada salida, sus fallas y sus fotos. ⚖ = tuvo recapacitación: sus salidas anteriores pesan ' + S.cfg.pesoPrevias + ' %.</p>'
+    : '<p class="vacio">No hay salidas registradas en este mes.</p>';
+  return '<h1 class="tit">Consolidado</h1><select data-c="cMes" aria-label="Mes" style="margin-bottom:14px">' +
+    mesesDisponibles().map(m => '<option value="' + m + '"' + (m === mes ? ' selected' : '') + '>' + etiquetaMes(m) + '</option>').join('') + '</select>' +
+    '<div class="resumen"><div class="res"><small>Cumplimiento global</small><b>' + (glob === null ? '—' : NUM(glob, 1) + '%') + '</b>' + delta + '</div>' +
+    '<div class="res"><small>Costo total de bonos</small><b>' + COP(costo) + '</b><em class="muted">' + totalSal + ' salidas · ' + filas.length + ' conductores</em></div>' +
+    '<div class="res" style="grid-column:1/-1"><small>Control que más se incumple</small><b style="font-size:22px">' + (top ? esc(top.nombre) + ' · ' + top.fallas + ' fallas' : 'Ninguno') + '</b></div></div>' +
+    '<section class="card"><h2 class="paso" style="margin-bottom:8px">Pareto de incumplimientos</h2>' + svgPareto(par, false) + '</section>' + tabla +
+    (filas.length ? '<div class="acc" style="flex-wrap:wrap"><button class="btn sec sm" data-a="csv">Exportar CSV</button><button class="btn sec sm" data-a="imprimir">Imprimir / PDF</button></div>' : '') +
+    '<button class="btn prim big" data-a="cerrarMes" style="margin-top:14px">CERRAR MES</button>' +
+    (cierre ? '<p class="nota">Cerrado el ' + fmtDia(cierre.ts) + ' (' + cierre.cambios + ' conductor(es) pasaron a recapacitación).</p>' : '');
+}
+
+function csvMes(mes) {
+  const fil = filasMes(mes), q = v => '"' + String(v).replace(/"/g, '""') + '"', num = n => String(redondear(n, 2)).replace('.', ',');
+  const enc = ['Mes', 'Ranking', 'Conductor', 'Cédula', 'Salidas'].concat(CONTROLES.map(c => '% ' + c.corto), ['Puntaje', '% Bono', 'Bono (COP)', 'Estado']);
+  const lineas = [enc.map(q).join(';')];
+  fil.forEach((x, i) => lineas.push([etiquetaMes(mes), i + 1, x.c.nombre, x.c.cedula, x.r.n].concat(CONTROLES.map(c => num(x.r.pct[c.k])),
+    [num(x.r.puntaje), x.r.pctBono, x.r.bono, x.c.estado === 'habilitado' ? 'Habilitado' : x.c.estado === 'recap' ? 'Requiere recapacitación' : 'Pendiente']).map(q).join(';')));
+  return '\ufeff' + lineas.join('\r\n');
+}
+
+function descargar(txt, nombre, tipo) {
+  const b = new Blob([txt], { type: tipo }), a = document.createElement('a');
+  a.href = URL.createObjectURL(b); a.download = nombre; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 800);
+}
+
+function imprimirMes(mes) {
+  const fil = filasMes(mes), par = calcularPareto(mes, S.salidas), glob = cumplimientoGlobal(mes, S.salidas, S.cfg);
+  const costo = fil.reduce((a, x) => a + x.r.bono, 0);
+  $('#print').innerHTML = '<h1>Consolidado mensual · ' + etiquetaMes(mes) + '</h1><p>Cantera Santa Rita · Bello, Antioquia. Cumplimiento global: <b>' +
+    (glob === null ? '—' : NUM(glob, 1) + '%') + '</b> · Costo total de bonos: <b>' + COP(costo) + '</b></p>' +
+    '<table><thead><tr><th>#</th><th>Conductor</th><th>Salidas</th>' + CONTROLES.map(c => '<th>% ' + c.corto + '</th>').join('') + '<th>Puntaje</th><th>% Bono</th><th>Bono</th></tr></thead><tbody>' +
+    fil.map((x, i) => '<tr><td>' + (i + 1) + '</td><td style="text-align:left">' + esc(x.c.nombre) + '</td><td>' + x.r.n + '</td>' +
+      CONTROLES.map(c => '<td>' + NUM(x.r.pct[c.k], 1) + '</td>').join('') + '<td>' + NUM(x.r.puntaje, 1) + '</td><td>' + x.r.pctBono + '%</td><td>' + COP(x.r.bono) + '</td></tr>').join('') +
+    '</tbody></table><h2 style="margin-top:16px">Pareto de incumplimientos</h2>' + svgPareto(par, true);
+  window.print();
+}
+
+async function cerrarMes() {
+  const mes = S.p.mes || mesActual();
+  const cambios = evaluarCierre(mes, S.conductores, S.salidas, S.capacitaciones, S.cfg);
+  const lista = cambios.map(x => { const c = S.conductores.find(y => y.id === x.conductorId); return '<li>' + esc(c.nombre) + ' (' + NUM(x.puntaje, 1) + ')</li>'; }).join('');
+  const ok = await confirmar('Cerrar ' + etiquetaMes(mes),
+    cambios.length ? '<p>Estos conductores tienen puntaje menor a ' + S.cfg.puntajeMin + ' y pasarán a <b>Requiere recapacitación</b>:</p><ul>' + lista + '</ul>'
+                   : '<p>Ningún conductor está por debajo del puntaje mínimo (' + S.cfg.puntajeMin + '). Se registrará el cierre del mes.</p>',
+    'CERRAR MES');
+  if (!ok) return;
+  try {
+    for (const x of cambios) { const c = S.conductores.find(y => y.id === x.conductorId); c.estado = 'recap'; await dbPut('conductores', c); }
+    S.cierres[mes] = { ts: Date.now(), cambios: cambios.length };
+    await dbSetMeta('cierres', S.cierres);
+    toast('Mes cerrado', 'ok'); refrescar();
+  } catch (e) { errorDB(e); }
+}
+
+/* ---------- Configuración ---------- */
+function vConfig() {
+  const c = S.cfg;
+  const esc3 = c.escala.map((e, i) => '<div class="fila" style="margin-bottom:8px"><div><label class="lbl">Desde puntaje</label><input id="eMin' + i + '" inputmode="decimal" value="' + NUM(e.min) + '"></div>' +
+    '<div><label class="lbl">% del bono</label><input id="ePct' + i + '" inputmode="decimal" value="' + NUM(e.pct) + '"></div></div>').join('');
+  return '<h1 class="tit">Configuración</h1>' +
+    '<section class="card"><h2 class="paso">Pesos de los controles <span id="sumaPesos" class="suma ok"></span></h2><div class="fila">' +
+    CONTROLES.map(k => '<div><label class="lbl">' + k.corto + ' (%)</label><input id="p_' + k.k + '" data-i="sumaPesos" inputmode="decimal" value="' + NUM(c.pesos[k.k]) + '"></div>').join('') + '</div>' +
+    '<p class="nota">Deben sumar exactamente 100.</p></section>' +
+    '<section class="card"><h2 class="paso">Escala del bono</h2>' + esc3 +
+    '<p class="nota">Por debajo del último puntaje, el bono es 0 %.</p>' +
+    '<label class="lbl">Valor del bono máximo (COP)</label><input id="bonoMax" inputmode="numeric" value="' + Math.round(c.bonoMax) + '"></section>' +
+    '<section class="card"><h2 class="paso">Habilitación y capacitación</h2>' +
+    '<label class="lbl">Puntaje mínimo para seguir habilitado</label><input id="puntajeMin" inputmode="decimal" value="' + NUM(c.puntajeMin) + '">' +
+    '<label class="lbl">Nota mínima para aprobar la capacitación</label><input id="notaMin" inputmode="decimal" value="' + NUM(c.notaMin) + '">' +
+    '<label class="lbl">Peso (%) de las salidas anteriores a su última capacitación</label><input id="pesoPrevias" inputmode="decimal" value="' + NUM(c.pesoPrevias) + '">' +
+    '<p class="nota">Si un conductor recapacita, sus salidas hechas antes pesan este porcentaje y las nuevas pesan 100 %. Con 100 se desactiva; con 0 las anteriores no cuentan.</p></section>' +
+    '<section class="card"><h2 class="paso">Límites de carga en la vía</h2>' +
+    '<p class="nota">Peso <b>bruto</b> vehicular máximo (camión + combustible + carga). Referencia: Resolución 4100 de 2004 del Ministerio de Transporte y sus modificaciones. Verifica el valor vigente de tu configuración.</p>' +
+    Object.keys(TIPOS).map(k => '<label class="lbl">' + TIPOS[k] + ' (t)</label><input id="l_' + k + '" inputmode="decimal" value="' + NUM(c.limites[k]) + '">').join('') +
+    '<label class="lbl">Referencia vial recomendada (t) · 0 = desactivada</label><input id="recomendado" inputmode="decimal" value="' + NUM(c.recomendado) + '">' +
+    '<label class="chk"><input type="checkbox" id="exigirRec"' + (c.exigirRecomendado ? ' checked' : '') + '><span>Exigirla: pasarla cuenta como incumplimiento</span></label>' +
+    '<p class="nota">La referencia recomendada es un criterio de la empresa, no un límite legal. Si no se exige, solo muestra una advertencia.</p></section>' +
+    '<section class="card"><h2 class="paso">PIN de acceso</h2><label class="lbl">PIN del supervisor</label><input id="pinSup" inputmode="numeric" value="' + esc(c.pinSup) + '">' +
+    '<label class="lbl">PIN del administrador</label><input id="pinAdm" inputmode="numeric" value="' + esc(c.pinAdm) + '"></section>' +
+    '<button class="btn prim big" data-a="guardarCfg">GUARDAR CONFIGURACIÓN</button>' +
+    '<button class="btn sec" data-a="probar">Probar fórmulas (caso de $120.000)</button>';
+}
+
+function sumaPesosUI() {
+  const el = $('#sumaPesos'); if (!el) return;
+  let s = 0; CONTROLES.forEach(k => { s += parseNum($('#p_' + k.k).value) || 0; });
+  s = redondear(s, 2); el.textContent = 'Suma: ' + NUM(s) + '%'; el.className = 'suma ' + (Math.abs(s - 100) < 0.001 ? 'ok' : 'bad');
+}
+
+async function guardarCfg() {
+  const err = [], n = id => parseNum($(id).value);
+  const pesos = {}; let suma = 0;
+  CONTROLES.forEach(k => { const v = n('#p_' + k.k); if (v === null || v < 0) err.push('Peso inválido en ' + k.corto + '.'); pesos[k.k] = v || 0; suma += v || 0; });
+  if (Math.abs(suma - 100) > 0.001) err.push('Los pesos suman ' + NUM(redondear(suma, 2)) + ' y deben sumar 100.');
+  const escala = [0, 1, 2].map(i => ({ min: n('#eMin' + i), pct: n('#ePct' + i) }));
+  escala.forEach((e, i) => {
+    if (e.min === null || e.min < 0 || e.min > 100) err.push('Puntaje inválido en el escalón ' + (i + 1) + '.');
+    if (e.pct === null || e.pct < 0 || e.pct > 100) err.push('Porcentaje de bono inválido en el escalón ' + (i + 1) + '.');
+  });
+  if (!(escala[0].min > escala[1].min && escala[1].min > escala[2].min)) err.push('Los puntajes de la escala deben ir de mayor a menor.');
+  const bonoMax = n('#bonoMax'); if (bonoMax === null || bonoMax < 0) err.push('Bono máximo inválido.');
+  const puntajeMin = n('#puntajeMin'), notaMin = n('#notaMin'), pesoPrevias = n('#pesoPrevias'), rec = n('#recomendado');
+  if (puntajeMin === null || puntajeMin < 0 || puntajeMin > 100) err.push('Puntaje mínimo inválido (0 a 100).');
+  if (notaMin === null || notaMin < 0 || notaMin > 100) err.push('Nota mínima inválida (0 a 100).');
+  if (pesoPrevias === null || pesoPrevias < 0 || pesoPrevias > 100) err.push('El peso de salidas anteriores debe estar entre 0 y 100.');
+  if (rec === null || rec < 0) err.push('La referencia recomendada no puede ser negativa.');
+  const limites = {}; Object.keys(TIPOS).forEach(k => { const v = n('#l_' + k); if (v === null || v <= 0) err.push('Límite inválido para ' + TIPOS[k] + '.'); limites[k] = v; });
+  const pinSup = $('#pinSup').value.trim(), pinAdm = $('#pinAdm').value.trim();
+  if (!/^\d{4,8}$/.test(pinSup) || !/^\d{4,8}$/.test(pinAdm)) err.push('Los PIN deben ser de 4 a 8 dígitos.');
+  if (pinSup === pinAdm) err.push('Los PIN no pueden ser iguales.');
+  if (err.length) { aviso('Revisa la configuración', '<ul>' + err.map(e => '<li>' + e + '</li>').join('') + '</ul>'); return; }
+  const cfg = Object.assign({}, S.cfg, { pesos, escala, bonoMax, puntajeMin, notaMin, pesoPrevias, limites, recomendado: rec,
+    exigirRecomendado: $('#exigirRec').checked, pinSup, pinAdm });
+  try { await dbSetMeta('cfg', cfg); S.cfg = cfg; toast('Configuración guardada', 'ok'); }
+  catch (e) { errorDB(e); }
+}
+
+function probarFormulas() {
+  const r = autoPrueba();
+  aviso('Prueba de fórmulas', '<ul>' + r.map(x => '<li>' + (x.ok ? '✅' : '❌') + ' <b>' + x.nombre + '</b><br><span class="muted">' + x.detalle + '</span></li>').join('') + '</ul>' +
+    '<p class="muted">Se calcula en memoria; no se guarda nada.</p>');
+}
+
+/* ---------- Respaldo ---------- */
+function vRespaldo() {
+  return '<h1 class="tit">Respaldo de datos</h1><section class="card"><p>Los datos viven solo en <b>este celular</b>. Descarga un respaldo cada semana, y úsalo para pasar la información a otro dispositivo.</p></section>' +
+    '<button class="btn prim big" data-a="exportar">' + IC.respaldo + ' EXPORTAR RESPALDO (JSON)</button>' +
+    '<label class="btn sec" for="impIn" style="margin-top:0">IMPORTAR RESPALDO (JSON)</label><input id="impIn" type="file" accept=".json,application/json" data-c="importar" hidden>' +
+    (S.rol === 'admin' ? '<button class="btn danger" data-a="reiniciar" style="margin-top:14px">REINICIAR TODOS LOS DATOS</button>' +
+      '<p class="nota">Reiniciar borra conductores, camiones, capacitaciones, salidas y cierres. La configuración se conserva.</p>' : '');
+}
+
+async function exportar() {
+  const d = { app: 'volquetas', version: 2, fecha: new Date().toISOString(), conductores: S.conductores, camiones: S.camiones,
+    capacitaciones: S.capacitaciones, salidas: S.salidas, cfg: S.cfg, cierres: S.cierres };
+  descargar(JSON.stringify(d), 'respaldo-volquetas-' + new Date().toISOString().slice(0, 10) + '.json', 'application/json');
+  toast('Respaldo descargado', 'ok');
+}
+
+async function importar(file) {
+  if (!file) return;
+  try {
+    const d = JSON.parse(await file.text());
+    if (!d || d.app !== 'volquetas' || !Array.isArray(d.conductores) || !Array.isArray(d.camiones) || !Array.isArray(d.capacitaciones) || !Array.isArray(d.salidas))
+      throw new Error('Este archivo no es un respaldo de esta app.');
+    const ok = await confirmar('Importar respaldo', '<p>Se reemplazarán TODOS los datos actuales por los del archivo (' + d.conductores.length + ' conductores, ' + d.camiones.length + ' camiones, ' + d.salidas.length + ' salidas).</p>', 'IMPORTAR', 'danger');
+    if (!ok) return;
+    for (const s of ['conductores', 'camiones', 'capacitaciones', 'salidas']) { await dbClear(s); for (const o of d[s]) await dbPut(s, o); }
+    await dbSetMeta('cfg', mezclarCfg(d.cfg)); await dbSetMeta('cierres', d.cierres || {});
+    await cargarTodo(); toast('Respaldo importado', 'ok'); render();
+  } catch (e) { aviso('No se pudo importar', '<p>' + esc(e.message || e) + '</p>'); }
+}
+
+async function reiniciar() {
+  const ok = await confirmar('Reiniciar datos', '<p>Esto borra <b>todos</b> los conductores, camiones, capacitaciones y salidas. No se puede deshacer. Descarga un respaldo antes.</p>', 'SÍ, BORRAR TODO', 'danger');
+  if (!ok) return;
+  try {
+    for (const s of ['conductores', 'camiones', 'capacitaciones', 'salidas']) await dbClear(s);
+    await dbSetMeta('cierres', {});
+    await cargarTodo(); toast('Datos reiniciados', 'ok'); render();
+  } catch (e) { errorDB(e); }
+}
+
+/* ---------- Acciones de botones ---------- */
+const ACC = {
+  atras: () => history.length > 1 ? history.back() : atras(),
+  salir: () => { S.rol = null; try { sessionStorage.removeItem('rol'); } catch (_) {} reset('login'); },
+  ir: el => go(el.dataset.v, el.dataset.v === 'historial' ? { mes: mesActual() } : el.dataset.v === 'consolidado' ? { mes: mesActual() } : {}),
+  selCond: el => {
+    S.sal.cid = el.dataset.id;
+    const cam = S.camiones.find(c => c.conductorId === el.dataset.id);
+    if (cam) S.sal.camId = cam.id;
+    refrescar();
+  },
+  ctl: el => { S.sal[el.dataset.k] = el.dataset.v === '1'; refrescar(); },
+  guardarSalida,
+  verFoto: el => { const s = S.salidas.find(x => x.id === el.dataset.id); if (s && s.foto) modal('<h3>' + esc(s.conductorNombre) + '</h3><p class="muted">' + fmtFecha(s.ts) + ' · ' + esc(s.placa) + '</p><img class="grande" src="' + s.foto + '" alt="Foto de evidencia">', [{ t: 'Cerrar', cls: 'prim', val: true }]); },
+  anular: async el => {
+    const s = S.salidas.find(x => x.id === el.dataset.id); if (!s) return;
+    const motivo = await pedirTexto('Anular salida', '<p>' + esc(s.conductorNombre) + ' · ' + fmtFecha(s.ts) + '</p><p class="muted">Una salida anulada no cuenta en el cálculo.</p>');
+    if (!motivo) return;
+    try { s.anulada = true; s.motivoAnulacion = motivo; s.fechaAnulacion = Date.now(); await dbPut('salidas', s); toast('Salida anulada', 'ok'); refrescar(); }
+    catch (e) { s.anulada = false; errorDB(e); }
+  },
+  masSalidas: () => { S.hmax += 30; refrescar(); },
+  nuevoCond: () => go('condForm', {}),
+  editCond: el => go('condForm', { id: el.dataset.id }),
+  verCond: el => go('historial', { mes: mesActual(), cid: el.dataset.id }),
+  guardarCond: el => guardarCond(el.dataset.id),
+  nuevoCam: () => go('camForm', {}),
+  editCam: el => go('camForm', { id: el.dataset.id }),
+  guardarCam: el => guardarCam(el.dataset.id),
+  guardarCap,
+  verCondMes: el => go('historial', { mes: el.dataset.mes, cid: el.dataset.id }),
+  csv: () => { const mes = S.p.mes || mesActual(); descargar(csvMes(mes), 'consolidado-' + mes + '.csv', 'text/csv;charset=utf-8'); toast('CSV descargado', 'ok'); },
+  imprimir: () => imprimirMes(S.p.mes || mesActual()),
+  cerrarMes,
+  guardarCfg,
+  probar: probarFormulas,
+  exportar,
+  reiniciar,
+  entrar: () => {
+    const pin = ($('#pin').value || '').trim();
+    if (pin === S.cfg.pinAdm) S.rol = 'admin'; else if (pin === S.cfg.pinSup) S.rol = 'sup';
+    else { toast('PIN incorrecto', 'bad'); $('#pin').value = ''; return; }
+    try { sessionStorage.setItem('rol', S.rol); } catch (_) {}
+    reset('home');
+  }
+};
+const INP = {
+  busca: el => { S.sal.q = el.value; $('#listaCond').innerHTML = htmlListaCond(); },
+  peso: el => { S.sal.peso = el.value; $('#medidor').innerHTML = htmlMedidor(); },
+  obs: el => { S.sal.obs = el.value; },
+  camPrev,
+  sumaPesos: sumaPesosUI
+};
+const CHG = {
+  cam: el => { S.sal.camId = el.value || null; refrescar(); },
+  foto: async el => {
+    const f = el.files && el.files[0]; if (!f) return;
+    try { S.sal.foto = await comprimirImagen(f, 960, 0.7); refrescar(); }
+    catch (e) { toast(e.message, 'bad'); }
+  },
+  hMes: el => { S.p.mes = el.value; S.hmax = 30; refrescar(); },
+  hCond: el => { S.p.cid = el.value; S.hmax = 30; refrescar(); },
+  cMes: el => { S.p.mes = el.value; refrescar(); },
+  camPrev,
+  importar: async el => { await importar(el.files && el.files[0]); el.value = ''; }
+};
+const POST = { camForm: camPrev, config: sumaPesosUI };
+const VISTAS = { login: vLogin, home: vHome, salida: vSalida, historial: vHistorial, conductores: vConductores, condForm: vCondForm,
+  camiones: vCamiones, camForm: vCamForm, capacitaciones: vCapacitaciones, consolidado: vConsolidado, config: vConfig, respaldo: vRespaldo };
+
+document.addEventListener('click', e => { const el = e.target.closest('[data-a]'); if (el && ACC[el.dataset.a]) ACC[el.dataset.a](el, e); });
+document.addEventListener('input', e => { const el = e.target.closest('[data-i]'); if (el && INP[el.dataset.i]) INP[el.dataset.i](el, e); });
+document.addEventListener('change', e => { const el = e.target.closest('[data-c]'); if (el && CHG[el.dataset.c]) CHG[el.dataset.c](el, e); });
+document.addEventListener('submit', e => { const f = e.target.closest('[data-f]'); if (f) { e.preventDefault(); if (f.dataset.f === 'login') ACC.entrar(); } });
+window.addEventListener('popstate', atras);
+
+/* ---------- Arranque ---------- */
+async function iniciar() {
+  try { db = await abrirDB(); await cargarTodo(); }
+  catch (e) {
+    $('#app').innerHTML = '<main class="wrap"><div class="card"><h1 class="tit">No se pudo iniciar</h1><p>' + esc(e.message || e) +
+      '</p><p class="muted">Revisa que el navegador no esté en modo privado y vuelve a abrir la app.</p></div></main>';
+    return;
+  }
+  try { const r = sessionStorage.getItem('rol'); if (r === 'admin' || r === 'sup') { S.rol = r; S.vista = 'home'; } } catch (_) {}
+  render();
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+/*INICIO*/iniciar();/*FIN*/
+</script>
+</body>
+</html>
