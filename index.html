@@ -1,0 +1,1811 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#101317">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Control de Salidas de Volquetas</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+/* =========================================================
+   ESTILOS · tema "cantera nocturna": gris roca, ámbar de seguridad
+   ========================================================= */
+:root{
+  --bg:#101317; --panel:#1a1f26; --panel2:#232a33; --line:#313a46;
+  --txt:#f4f1ea; --mut:#9aa6b4; --amber:#ffb020; --orange:#ff6a2b;
+  --ok:#35d07f; --bad:#ff5a5f; --warn:#ffcf4d; --dust:#d8c7a3;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--txt);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:17px;line-height:1.35}
+body{min-height:100vh}
+h1,h2,h3,p{margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+.cond{font-family:"Roboto Condensed","Arial Narrow",sans-serif-condensed,system-ui,sans-serif;
+  text-transform:uppercase;letter-spacing:.05em}
+svg.i{width:1.2em;height:1.2em;stroke:currentColor;fill:none;stroke-width:1.8;
+  stroke-linecap:round;stroke-linejoin:round;vertical-align:-.22em;flex:none}
+.muted{color:var(--mut)}
+.rojo{color:var(--bad)}
+.hazard{height:10px;background:repeating-linear-gradient(-45deg,var(--amber) 0 14px,#111 14px 28px)}
+
+/* Barra superior */
+.top{position:sticky;top:0;z-index:20;background:rgba(16,19,23,.96);backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--line)}
+.top .bar{display:flex;align-items:center;gap:10px;padding:10px 14px;max-width:560px;margin:auto}
+.ib{width:46px;height:46px;border-radius:14px;border:1px solid var(--line);background:var(--panel);
+  display:grid;place-items:center;flex:none;cursor:pointer}
+.ib svg{width:24px;height:24px}
+.top .t{flex:1;min-width:0}
+.top .t b{display:block;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top .t small{color:var(--mut);font-size:12px}
+
+.wrap{max-width:560px;margin:0 auto;padding:14px 14px 90px}
+.tit{font-size:26px;margin:6px 0 14px;font-family:"Roboto Condensed","Arial Narrow",sans-serif-condensed,sans-serif;
+  text-transform:uppercase;letter-spacing:.04em}
+
+/* Tarjetas y formularios */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:14px}
+.paso{font-size:16px;display:flex;align-items:center;gap:10px;margin-bottom:12px;
+  font-family:"Roboto Condensed","Arial Narrow",sans-serif-condensed,sans-serif;text-transform:uppercase;letter-spacing:.05em}
+.paso b{width:30px;height:30px;border-radius:50%;background:var(--amber);color:#111;display:grid;place-items:center;font-size:15px}
+.lbl{display:block;font-size:14px;color:var(--mut);margin:12px 0 6px}
+input,select,textarea{width:100%;min-height:54px;border-radius:14px;border:1.5px solid var(--line);
+  background:#0d1013;padding:12px 14px;font-size:18px;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--amber)}
+textarea{min-height:90px;resize:vertical}
+input.pin{text-align:center;font-size:28px;letter-spacing:.4em}
+input[type=checkbox]{width:26px;min-height:26px;height:26px;accent-color:var(--amber)}
+.fila{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.chk{display:flex;align-items:center;gap:12px;margin-top:12px}
+
+.btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:58px;
+  border-radius:16px;border:1.5px solid var(--line);background:var(--panel2);font-weight:700;
+  font-size:17px;cursor:pointer;padding:12px 16px;letter-spacing:.02em}
+.btn:active{transform:scale(.98)}
+.btn.prim{background:var(--amber);border-color:var(--amber);color:#17120a}
+.btn.danger{background:var(--bad);border-color:var(--bad);color:#fff}
+.btn.sec{background:var(--panel2)}
+.btn.sm{min-height:44px;font-size:15px;padding:8px 12px;width:auto;flex:1}
+.btn.big{min-height:64px;font-size:19px;margin:6px 0 14px}
+.btn[disabled]{opacity:.5}
+.acc{display:flex;gap:10px;margin-top:12px;align-items:stretch}
+
+/* Login */
+.login-in{max-width:420px;margin:0 auto;padding:34px 20px;text-align:center}
+.logo{width:92px;height:92px;border-radius:26px;background:var(--amber);color:#17120a;
+  display:grid;place-items:center;margin:0 auto 18px;transform:rotate(-4deg)}
+.logo svg{width:54px;height:54px;stroke-width:1.7}
+.login h1{font-size:30px;line-height:1.1;margin-bottom:8px}
+.login .card{margin-top:24px;text-align:left}
+
+/* Inicio */
+.hero{position:relative;border-radius:22px;overflow:hidden;margin-bottom:16px;
+  background:linear-gradient(160deg,#252c36,#171b21);border:1px solid var(--line)}
+.hero svg.cantera{position:absolute;left:0;bottom:0;width:100%;height:70%;opacity:.9}
+.hero-in{position:relative;padding:18px 18px 16px}
+.hero small{color:var(--dust);font-size:13px}
+.hero h1{font-size:34px;margin:2px 0 14px}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.kpis div{background:rgba(10,12,15,.72);border:1px solid var(--line);border-radius:14px;padding:10px 8px;text-align:center}
+.kpis b{display:block;font-size:26px;color:var(--amber);font-family:"Roboto Condensed","Arial Narrow",sans-serif-condensed,sans-serif}
+.kpis span{font-size:11.5px;color:var(--mut);line-height:1.1;display:block}
+
+/* Botones del menú */
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tile{aspect-ratio:1/1;border-radius:20px;border:1px solid var(--line);border-left:6px solid var(--amber);
+  background:linear-gradient(155deg,var(--panel2),var(--panel));padding:14px;text-align:left;cursor:pointer;
+  display:flex;flex-direction:column;justify-content:space-between;overflow:hidden}
+.tile:active{transform:scale(.97)}
+.tile .ic{width:62px;height:62px;border-radius:18px;background:rgba(255,176,32,.13);color:var(--amber);
+  display:grid;place-items:center}
+.tile .ic svg{width:36px;height:36px}
+.tile b{display:block;font-size:19px;line-height:1.1;font-family:"Roboto Condensed","Arial Narrow",sans-serif-condensed,sans-serif;
+  text-transform:uppercase;letter-spacing:.04em}
+.tile small{display:block;color:var(--mut);font-size:13px;margin-top:3px;line-height:1.15}
+
+/* Lista de selección de conductor */
+.buscar{position:relative}
+.buscar svg{position:absolute;left:14px;top:17px;color:var(--mut)}
+.buscar input{padding-left:44px}
+.lista-sel{max-height:250px;overflow:auto;margin-top:10px;display:flex;flex-direction:column;gap:8px}
+.opt{display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;width:100%;
+  min-height:60px;border-radius:14px;border:1.5px solid var(--line);background:var(--panel2);padding:10px 12px;cursor:pointer}
+.opt.sel{border-color:var(--amber);background:rgba(255,176,32,.12)}
+.opt b{display:block;font-size:16px}
+.opt small{color:var(--mut)}
+.aviso{margin-top:10px;border-radius:14px;padding:12px 14px;font-size:15px;display:flex;gap:10px}
+.aviso.bad{background:rgba(255,90,95,.14);border:1px solid var(--bad)}
+.aviso.warn{background:rgba(255,207,77,.12);border:1px solid var(--warn)}
+.aviso.ok{background:rgba(53,208,127,.12);border:1px solid var(--ok)}
+
+/* Controles Cumple / No cumple */
+.ctl{border:1.5px solid var(--line);border-radius:16px;padding:12px;margin-bottom:10px;background:var(--panel2)}
+.ctl.si{border-color:var(--ok)} .ctl.no{border-color:var(--bad)}
+.ctl-t{display:flex;align-items:center;gap:10px;font-weight:700;margin-bottom:10px}
+.ctl-t svg{width:26px;height:26px;color:var(--amber)}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.seg button{min-height:56px;border-radius:14px;border:1.5px solid var(--line);background:#0d1013;
+  font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;color:var(--mut)}
+.seg button.on{background:var(--ok);border-color:var(--ok);color:#06210f}
+.seg button.on.bad{background:var(--bad);border-color:var(--bad);color:#fff}
+
+/* Medidor de carga */
+.limbox{font-size:14.5px;background:#0d1013;border:1px dashed var(--line);border-radius:14px;padding:12px;margin-top:12px}
+.medidor{position:relative;display:flex;height:22px;border-radius:12px;overflow:hidden;margin-top:18px;background:#0d1013}
+.medidor i{display:block;height:100%}
+.zg{background:var(--ok)} .zy{background:var(--warn)} .zr{background:var(--bad)}
+.mk{position:absolute;top:-6px;width:4px;height:34px;background:#fff;border-radius:3px;box-shadow:0 0 0 2px #000;transform:translateX(-2px)}
+.escala{position:relative;height:22px;margin-top:6px;font-size:12px;color:var(--mut)}
+.escala em{position:absolute;transform:translateX(-50%);font-style:normal;white-space:nowrap}
+.veredicto{margin-top:8px;border-radius:14px;padding:14px;font-weight:700;display:flex;gap:10px;align-items:center;font-size:17px}
+.veredicto.ok{background:rgba(53,208,127,.15);border:1.5px solid var(--ok);color:var(--ok)}
+.veredicto.no{background:rgba(255,90,95,.15);border:1.5px solid var(--bad);color:var(--bad)}
+.veredicto small{display:block;font-weight:500;color:var(--txt);font-size:14px}
+
+/* Foto */
+.fotoBtn{display:flex;align-items:center;justify-content:center;gap:10px;min-height:60px;border-radius:14px;
+  border:1.5px dashed var(--amber);color:var(--amber);font-weight:700;cursor:pointer}
+.prevFoto{width:100%;max-height:260px;object-fit:cover;border-radius:14px;margin-top:10px}
+
+/* Tarjetas de lista */
+.item,.sal{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px;margin-bottom:12px}
+.item header,.sal header{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.item header small,.sal header small{display:block;color:var(--mut);font-size:13.5px}
+.item p,.sal p{margin-top:8px;font-size:15px}
+.sal.anul{opacity:.6}
+.chip{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:4px 10px;font-size:13px;font-weight:700;white-space:nowrap}
+.chip.ok{background:rgba(53,208,127,.16);color:var(--ok)}
+.chip.bad{background:rgba(255,90,95,.16);color:var(--bad)}
+.chip.warn{background:rgba(255,207,77,.16);color:var(--warn)}
+.chip.gris{background:var(--panel2);color:var(--mut)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.falla{color:var(--bad)}
+.obs{color:var(--dust);font-style:italic}
+.foto{display:flex;align-items:center;gap:10px;background:var(--panel2);border:1px solid var(--line);
+  border-radius:14px;padding:6px 12px 6px 6px;cursor:pointer;flex:1}
+.foto img{width:54px;height:54px;object-fit:cover;border-radius:10px}
+.foto span{font-weight:700;font-size:14px}
+.sin{display:flex;align-items:center;flex:1;font-size:14px}
+.vacio{text-align:center;color:var(--mut);padding:30px 10px}
+
+/* Tarjetas de Encuesta / Cuestionario */
+.pregunta-card{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.pregunta-card h4{font-size:16px;margin-bottom:10px;color:var(--txt)}
+.opcion-lbl{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#0d1013;border:1.5px solid var(--line);border-radius:10px;margin-bottom:6px;cursor:pointer;font-size:15px}
+.opcion-lbl input[type=radio]{accent-color:var(--amber);width:20px;height:20px}
+.opcion-lbl:hover{border-color:var(--amber)}
+
+/* Consolidado y Gráfico de barras */
+.resumen{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.res{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px}
+.res small{color:var(--mut);font-size:12.5px;display:block}
+.res b{font-size:26px;color:var(--amber);display:block;font-family:"Roboto Condensed","Arial Narrow",sans-serif-condensed,sans-serif}
+.res em{font-style:normal;font-size:13px}
+.up{color:var(--ok)} .down{color:var(--bad)}
+
+.grafico-card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:14px}
+.grafico-titulo{font-family:"Roboto Condensed",sans-serif;font-size:16px;text-transform:uppercase;margin-bottom:14px;color:var(--txt);display:flex;justify-content:space-between;align-items:center}
+.barra-item{margin-bottom:12px}
+.barra-info{display:flex;justify-content:space-between;font-size:14px;margin-bottom:5px;font-weight:600}
+.barra-track{height:16px;background:#0d1013;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+.barra-fill{height:100%;border-radius:8px;transition:width .4s ease}
+
+.barra{margin-bottom:12px}
+.barra .h{display:flex;justify-content:space-between;font-size:14px;margin-bottom:5px;font-weight:600}
+.barra .b{height:16px;background:#0d1013;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+.barra .b i{display:block;height:100%;border-radius:8px;transition:width .4s ease;background:var(--ok)}
+.barra .b i.m{background:var(--warn)}
+.barra .b i.p{background:var(--bad)}
+
+.tabla-w{overflow-x:auto;border-radius:16px;border:1px solid var(--line);margin-bottom:14px}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:14px;background:var(--panel)}
+th,td{padding:10px 8px;text-align:center;border-bottom:1px solid var(--line)}
+th{background:var(--panel2);font-size:12px;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
+td.n,th.n{text-align:left;min-width:130px}
+tr.fila-c{cursor:pointer}
+.pos{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--amber);color:#111;font-weight:800}
+
+/* Modales y avisos */
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:flex-end;justify-content:center;z-index:50;padding:0}
+#modal.open{display:flex}
+.mbox{background:var(--panel);width:100%;max-width:560px;border-radius:24px 24px 0 0;padding:20px 18px 24px;
+  border-top:4px solid var(--amber);max-height:92vh;overflow:auto}
+.mbox h3{font-size:22px;margin-bottom:10px;font-family:"Roboto Condensed","Arial Narrow",sans-serif-condensed,sans-serif;text-transform:uppercase}
+.mtxt{font-size:16px}
+.mtxt ul{margin:8px 0;padding-left:20px}
+.mbtn{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.mbtn .btn:only-child{grid-column:1/-1}
+.mbox img.grande{width:100%;border-radius:14px;margin-top:6px}
+#toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,30px);background:#000;color:#fff;
+  border:1.5px solid var(--amber);padding:14px 20px;border-radius:14px;opacity:0;pointer-events:none;
+  transition:.25s;z-index:60;max-width:90vw;text-align:center;font-weight:600}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+#toast.bad{border-color:var(--bad)}
+#toast.ok{border-color:var(--ok)}
+.suma{font-weight:800;padding:2px 10px;border-radius:10px}
+.suma.ok{background:rgba(53,208,127,.16);color:var(--ok)}
+.suma.bad{background:rgba(255,90,95,.16);color:var(--bad)}
+.nota{font-size:14px;color:var(--mut);margin-top:8px}
+.nota b{color:var(--txt)}
+
+/* Impresión */
+#print{display:none}
+@media print{
+  body{background:#fff!important}
+  #app,#modal,#toast{display:none!important}
+  #print{display:block!important;color:#111;font-family:Arial,sans-serif;font-size:12px}
+  #print h1{font-size:20px;margin-bottom:4px}
+  #print table{min-width:0;width:100%;font-size:11px;background:#fff}
+  #print th,#print td{border:1px solid #999;padding:4px;color:#111;background:#fff}
+  #print th{background:#eee}
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="print"></div>
+<div id="modal"></div>
+<div id="toast"></div>
+<noscript>Esta aplicación necesita JavaScript.</noscript>
+
+<script>
+'use strict';
+/* =========================================================
+   CONTROL DE SALIDAS DE VOLQUETAS · Cantera Santa Rita
+   Secciones:  1) Reglas de negocio (funciones puras)
+               2) Datos (IndexedDB)
+               3) Interfaz
+   ========================================================= */
+
+/* =========================================================
+   1) REGLAS DE NEGOCIO  (sin acceso a pantalla ni base de datos)
+   ========================================================= */
+// <REGLAS>
+const CONTROLES = [
+  { k: 'lona',        nombre: 'Lona o malla colocada',   corto: 'Lona' },
+  { k: 'lavado',      nombre: 'Lavado de llantas',       corto: 'Lavado' },
+  { k: 'humectacion', nombre: 'Humectación de la carga', corto: 'Humectación' },
+  { k: 'carga',       nombre: 'Carga dentro del límite', corto: 'Carga' }
+];
+
+const TIPOS = {
+  sencillo: 'Volqueta sencilla (C2)',
+  doble:    'Doble troque (C3)',
+  tracto:   'Tractocamión (3S3)'
+};
+
+// Banco de 20 preguntas (5 por cada control)
+const BANCO_PREGUNTAS = [
+  // LONA
+  {
+    control: 'lona',
+    pregunta: 'La volqueta está cargada y lista para salir, pero la lona tiene un rasgón grande. ¿Qué haces?',
+    opciones: [
+      { t: 'Salgo despacio para que no se riegue material', correcta: false },
+      { t: 'Tapo el rasgón con lo que haya y salgo', correcta: false },
+      { t: 'No salgo hasta cambiar o reparar la lona', correcta: true },
+      { t: 'Salgo y aviso al llegar al destino', correcta: false }
+    ]
+  },
+  {
+    control: 'lona',
+    pregunta: 'La lona está puesta, pero un lado queda suelto y el material sobresale. ¿Qué haces?',
+    opciones: [
+      { t: 'Salgo, porque la lona ya está puesta', correcta: false },
+      { t: 'La aseguro bien tensada hasta cubrir todo el material', correcta: true },
+      { t: 'Salgo por la vía menos transitada', correcta: false },
+      { t: 'Le pido al supervisor que me deje pasar así', correcta: false }
+    ]
+  },
+  {
+    control: 'lona',
+    pregunta: 'Está lloviendo. ¿Hay que usar la lona?',
+    opciones: [
+      { t: 'No, la lluvia mantiene el material pegado', correcta: false },
+      { t: 'Solo si el viaje es largo', correcta: false },
+      { t: 'Sí, siempre, llueva o no', correcta: true },
+      { t: 'Solo si el material es fino', correcta: false }
+    ]
+  },
+  {
+    control: 'lona',
+    pregunta: 'Un ayudante puso la lona, pero tú no la revisaste. Si se riega material en la vía, ¿quién responde?',
+    opciones: [
+      { t: 'El ayudante', correcta: false },
+      { t: 'El supervisor', correcta: false },
+      { t: 'La cantera', correcta: false },
+      { t: 'El conductor, por eso revisa la lona antes de salir', correcta: true }
+    ]
+  },
+  {
+    control: 'lona',
+    pregunta: 'El material está bien cubierto por arriba, pero la lona deja abierta la parte trasera. ¿Es correcto?',
+    opciones: [
+      { t: 'No, debe cubrir todo el material, incluida la parte trasera', correcta: true },
+      { t: 'Sí, mientras la parte de arriba esté cubierta', correcta: false },
+      { t: 'Sí, si el viaje es corto', correcta: false },
+      { t: 'Sí, si el material es grueso', correcta: false }
+    ]
+  },
+  // LAVADO DE LLANTAS
+  {
+    control: 'lavado',
+    pregunta: 'Sales de la zona de cargue con barro en las llantas y el lavadero tiene fila. ¿Qué haces?',
+    opciones: [
+      { t: 'Salgo y las lavo más adelante', correcta: false },
+      { t: 'Espero mi turno y lavo las llantas antes de salir', correcta: true },
+      { t: 'Salgo si el barro es poco', correcta: false },
+      { t: 'Sacudo las llantas con la mano y salgo', correcta: false }
+    ]
+  },
+  {
+    control: 'lavado',
+    pregunta: '¿Para qué se lavan las llantas antes de entrar a la vía pública?',
+    opciones: [
+      { t: 'Para no ensuciar la vía con barro y polvo', correcta: true },
+      { t: 'Para que la volqueta gaste menos combustible', correcta: false },
+      { t: 'Para que la volqueta se vea mejor', correcta: false },
+      { t: 'Porque es un trámite de la cantera', correcta: false }
+    ]
+  },
+  {
+    control: 'lavado',
+    pregunta: 'Vienes de un tramo con barro y el lavadero queda lejos del camino de salida. ¿Qué haces?',
+    opciones: [
+      { t: 'Salgo, el lavadero queda muy lejos', correcta: false },
+      { t: 'Lavo solo si el supervisor me está viendo', correcta: false },
+      { t: 'Las lavo cuando regrese', correcta: false },
+      { t: 'Paso por el lavadero igual, porque el lavado es obligatorio en cada salida', correcta: true }
+    ]
+  },
+  {
+    control: 'lavado',
+    pregunta: 'El lavadero no tiene agua. ¿Qué haces?',
+    opciones: [
+      { t: 'Salgo igual, no es mi culpa', correcta: false },
+      { t: 'Limpio las llantas en seco y salgo', correcta: false },
+      { t: 'Aviso al supervisor y no salgo hasta que se puedan lavar', correcta: true },
+      { t: 'Salgo por otra vía', correcta: false }
+    ]
+  },
+  {
+    control: 'lavado',
+    pregunta: '¿Cuándo se lavan las llantas?',
+    opciones: [
+      { t: 'Solo cuando se ven con barro', correcta: false },
+      { t: 'En cada salida, antes de entrar a la vía pública', correcta: true },
+      { t: 'Solo en temporada de lluvias', correcta: false },
+      { t: 'Una vez al día', correcta: false }
+    ]
+  },
+  // HUMECTACIÓN
+  {
+    control: 'humectacion',
+    pregunta: 'Hay mucho polvo en la vía interna de la cantera. ¿Qué haces?',
+    opciones: [
+      { t: 'Aumento la velocidad para salir rápido', correcta: false },
+      { t: 'Salgo igual, el polvo es normal', correcta: false },
+      { t: 'Lo reporto al final del día', correcta: false },
+      { t: 'Aviso al supervisor para que se humecte antes de salir', correcta: true }
+    ]
+  },
+  {
+    control: 'humectacion',
+    pregunta: '¿Por qué se humectan el material y la vía?',
+    opciones: [
+      { t: 'Para reducir el polvo que afecta a conductores y vecinos', correcta: true },
+      { t: 'Para que el material pese más', correcta: false },
+      { t: 'Para que el material salga más barato', correcta: false },
+      { t: 'Para lavar la volqueta', correcta: false }
+    ]
+  },
+  {
+    control: 'humectacion',
+    pregunta: 'El material está seco y levanta polvo al cargarlo. ¿Qué haces?',
+    opciones: [
+      { t: 'Lo cargo rápido y salgo', correcta: false },
+      { t: 'Lo cubro solo con la lona', correcta: false },
+      { t: 'Pido que se humedezca antes de salir', correcta: true },
+      { t: 'Cargo menos material', correcta: false }
+    ]
+  },
+  {
+    control: 'humectacion',
+    pregunta: 'Se humectó en la mañana, pero a mediodía hay sol fuerte y vuelve el polvo. ¿Qué haces?',
+    opciones: [
+      { t: 'Ya se humectó, no hay que hacer nada', correcta: false },
+      { t: 'Pido otra humectación, porque el efecto no dura todo el día', correcta: true },
+      { t: 'Espero a la tarde', correcta: false },
+      { t: 'Salgo por la vía exterior', correcta: false }
+    ]
+  },
+  {
+    control: 'humectacion',
+    pregunta: 'Falla el equipo de humectación. ¿Qué haces?',
+    opciones: [
+      { t: 'Salgo y lo compenso con la lona', correcta: false },
+      { t: 'Salgo más despacio', correcta: false },
+      { t: 'Salgo y lo reporto después', correcta: false },
+      { t: 'Espero a que se restablezca la humectación antes de salir', correcta: true }
+    ]
+  },
+  // CARGA MÁXIMA
+  {
+    control: 'carga',
+    pregunta: 'La vía tiene un límite de carga menor al que admite tu volqueta. ¿Cuánto cargas?',
+    opciones: [
+      { t: 'Lo que permite la vía', correcta: true },
+      { t: 'Lo que admite la volqueta', correcta: false },
+      { t: 'Un punto intermedio', correcta: false },
+      { t: 'Lo que pida el cliente', correcta: false }
+    ]
+  },
+  {
+    control: 'carga',
+    pregunta: 'El cliente te pide cargar por encima del límite “solo por esta vez”. ¿Qué haces?',
+    opciones: [
+      { t: 'Cargo, porque el cliente manda', correcta: false },
+      { t: 'Cargo y salgo despacio', correcta: false },
+      { t: 'Me niego y explico que el límite lo marca la vía', correcta: true },
+      { t: 'Cargo, pero salgo por una vía más corta', correcta: false }
+    ]
+  },
+  {
+    control: 'carga',
+    pregunta: 'Dudas si tu carga está dentro del límite. ¿Qué haces?',
+    opciones: [
+      { t: 'Salgo, seguro está bien', correcta: false },
+      { t: 'Pido que se pese o se verifique antes de salir', correcta: true },
+      { t: 'Calculo a ojo', correcta: false },
+      { t: 'Le pregunto a otro conductor', correcta: false }
+    ]
+  },
+  {
+    control: 'carga',
+    pregunta: 'La carga se ve alta, pero no se desborda. ¿Eso basta?',
+    opciones: [
+      { t: 'Sí, si no se desborda', correcta: false },
+      { t: 'Sí, si la lona la cubre', correcta: false },
+      { t: 'Sí, si el viaje es corto', correcta: false },
+      { t: 'No, lo que cuenta es el peso permitido, no si se ve llena', correcta: true }
+    ]
+  },
+  {
+    control: 'carga',
+    pregunta: '¿Qué riesgos tiene exceder la carga máxima?',
+    opciones: [
+      { t: 'Daño a la vía, más riesgo de accidentes y sanciones', correcta: true },
+      { t: 'Ninguno, solo gasta más combustible', correcta: false },
+      { t: 'Solo una multa pequeña', correcta: false },
+      { t: 'Solo afecta a la volqueta', correcta: false }
+    ]
+  }
+];
+
+// Valores por defecto
+const CFG_DEF = {
+  pesos: { lona: 25, lavado: 25, humectacion: 20, carga: 30 },
+  escala: [ { min: 95, pct: 100 }, { min: 85, pct: 60 }, { min: 70, pct: 30 } ],
+  bonoMax: 200000,
+  puntajeMin: 70,
+  notaMin: 70,
+  pesoPrevias: 25,
+  limites: { sencillo: 17, doble: 28, tracto: 52 },
+  recomendado: 0,
+  exigirRecomendado: false,
+  pinSup: '1234',
+  pinAdm: '9999',
+  tramos: []
+};
+
+function redondear(n, d = 2) {
+  const f = Math.pow(10, d);
+  return Math.round((n + Number.EPSILON) * f) / f;
+}
+
+function limiteCarga(camion, cfg) {
+  const pbv = Number(cfg.limites[camion.tipo]) || 0;
+  const tara = Number(camion.tara) || 0;
+  const legal = Math.max(0, redondear(pbv - tara, 3));
+  const cap = Number(camion.capacidad) || 0;
+  const limite = Math.min(cap, legal);
+  return { capacidad: cap, pbv, tara, legal, limite,
+           marca: cap <= legal ? 'camion' : 'via', conTara: tara > 0 };
+}
+
+function evaluarCarga(peso, camion, cfg) {
+  const L = limiteCarga(camion, cfg);
+  const rec = Number(cfg.recomendado) || 0;
+  const sobreRec = rec > 0 && peso > rec;
+  const cumpleLimite = peso <= L.limite;
+  const cumple = cumpleLimite && !(cfg.exigirRecomendado && sobreRec);
+  return Object.assign({}, L, { peso, rec, sobreRec, cumple,
+    exceso: redondear(peso - L.limite, 3) });
+}
+
+function mesDeTs(ts) {
+  const d = new Date(ts);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+}
+function limitesMes(mes) {
+  const p = mes.split('-').map(Number);
+  return { ini: new Date(p[0], p[1] - 1, 1).getTime(), fin: new Date(p[0], p[1], 1).getTime() };
+}
+function mesAnterior(mes) {
+  const p = mes.split('-').map(Number);
+  const d = new Date(p[0], p[1] - 2, 1);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+}
+
+function pctBonoPorPuntaje(puntaje, escala) {
+  const e = escala.slice().sort((a, b) => b.min - a.min);
+  for (const t of e) { if (puntaje >= t.min) return t.pct; }
+  return 0;
+}
+
+function ultimaCapAprobada(conductorId, capacitaciones, hasta) {
+  let u = null;
+  capacitaciones.forEach(c => {
+    if (c.conductorId === conductorId && c.aprobada && c.ts < hasta && (u === null || c.ts > u)) u = c.ts;
+  });
+  return u;
+}
+
+function calcularConductorMes(conductorId, mes, salidas, capacitaciones, cfg) {
+  const lim = limitesMes(mes);
+  const ultCap = ultimaCapAprobada(conductorId, capacitaciones, lim.fin);
+  const lista = salidas.filter(s => !s.anulada && s.conductorId === conductorId && s.mes === mes);
+  const factor = Math.max(0, Math.min(1, (Number(cfg.pesoPrevias) || 0) / 100));
+  const r = { conductorId, mes, n: lista.length, nPonderado: 0, pct: {}, fallas: {},
+              puntaje: 0, pctBono: 0, bono: 0, ultCap, hayNuevas: false, ponderadas: 0 };
+  const suma = {};
+  CONTROLES.forEach(c => { suma[c.k] = 0; r.fallas[c.k] = 0; });
+  lista.forEach(s => {
+    const previa = ultCap !== null && s.ts < ultCap;
+    const w = previa ? factor : 1;
+    if (previa) r.ponderadas++; else r.hayNuevas = true;
+    r.nPonderado += w;
+    CONTROLES.forEach(c => { if (s[c.k]) suma[c.k] += w; else r.fallas[c.k]++; });
+  });
+  let p = 0;
+  CONTROLES.forEach(c => {
+    r.pct[c.k] = r.nPonderado > 0 ? (suma[c.k] / r.nPonderado) * 100 : 0;
+    p += r.pct[c.k] * (cfg.pesos[c.k] / 100);
+  });
+  r.puntaje = redondear(p, 2);
+  r.pctBono = (r.n > 0 && r.nPonderado > 0) ? pctBonoPorPuntaje(r.puntaje, cfg.escala) : 0;
+  r.bono = Math.round((r.pctBono / 100) * cfg.bonoMax);
+  return r;
+}
+
+function cumplimientoGlobal(mes, salidas, cfg) {
+  const lista = salidas.filter(s => !s.anulada && s.mes === mes);
+  if (!lista.length) return null;
+  let p = 0;
+  CONTROLES.forEach(c => {
+    const ok = lista.filter(s => s[c.k]).length;
+    p += (ok / lista.length) * 100 * (cfg.pesos[c.k] / 100);
+  });
+  return redondear(p, 2);
+}
+
+function calcularPareto(mes, salidas) {
+  const lista = salidas.filter(s => !s.anulada && s.mes === mes);
+  const datos = CONTROLES.map(c => ({ k: c.k, nombre: c.corto, fallas: lista.filter(s => !s[c.k]).length }));
+  datos.sort((a, b) => b.fallas - a.fallas);
+  const total = datos.reduce((a, d) => a + d.fallas, 0);
+  let acum = 0;
+  datos.forEach(d => { acum += d.fallas; d.acum = total ? (acum / total) * 100 : 0; });
+  return { datos, total };
+}
+
+function evaluarCierre(mes, conductores, salidas, capacitaciones, cfg) {
+  const cambios = [];
+  conductores.forEach(c => {
+    if (c.estado !== 'habilitado') return;
+    const r = calcularConductorMes(c.id, mes, salidas, capacitaciones, cfg);
+    if (r.n === 0) return;
+    if (!r.hayNuevas) return;
+    if (r.puntaje < cfg.puntajeMin) cambios.push({ conductorId: c.id, puntaje: r.puntaje });
+  });
+  return cambios;
+}
+// </REGLAS>
+
+// <REGLAS_REPORTE>
+function resumenInspecciones(mes, inspecciones) {
+  const lista = inspecciones.filter(i => !i.anulada && i.mes === mes);
+  const total = lista.length;
+  if (!total) return { total: 0, pctPolvo: null, pctMaterial: null, porTramo: [] };
+  const sinPolvo = lista.filter(i => i.polvo).length;
+  const sinMaterial = lista.filter(i => i.material).length;
+  const tramoMap = {};
+  lista.forEach(i => {
+    const t = i.tramo || 'General';
+    if (!tramoMap[t]) tramoMap[t] = { tramo: t, total: 0, polvo: 0, material: 0 };
+    tramoMap[t].total++;
+    if (!i.polvo) tramoMap[t].polvo++;
+    if (!i.material) tramoMap[t].material++;
+  });
+  return {
+    total,
+    pctPolvo: redondear((sinPolvo / total) * 100, 1),
+    pctMaterial: redondear((sinMaterial / total) * 100, 1),
+    porTramo: Object.values(tramoMap)
+  };
+}
+
+function datosReporteMensual(mes, salidas, inspecciones, conductores, capacitaciones, cfg) {
+  const salValidas = salidas.filter(s => !s.anulada && s.mes === mes);
+  const inspRes = resumenInspecciones(mes, inspecciones);
+  const habilitados = conductores.filter(c => c.estado === 'habilitado').length;
+  
+  const cRes = {};
+  CONTROLES.forEach(c => {
+    const fallas = salValidas.filter(s => !s[c.k]).length;
+    cRes[c.k] = { fallas, ok: salValidas.length - fallas, pct: salValidas.length ? redondear(((salValidas.length - fallas) / salValidas.length) * 100, 1) : null };
+  });
+
+  const condsData = conductores.map(c => {
+    const r = calcularConductorMes(c.id, mes, salidas, capacitaciones, cfg);
+    return { conductor: c, salidas: r.n, pct: r.pct };
+  }).filter(x => x.salidas > 0).sort((a, b) => b.salidas - a.salidas);
+
+  // Tendencia últimos 6 meses
+  const ult6 = [];
+  const p = mes.split('-').map(Number);
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(p[0], p[1] - 1 - i, 1);
+    const mStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    const glob = cumplimientoGlobal(mStr, salidas, cfg);
+    const iRes = resumenInspecciones(mStr, inspecciones);
+    ult6.push({ mes: mStr, etiqueta: etiquetaMes(mStr), global: glob, polvo: iRes.pctPolvo });
+  }
+
+  return {
+    totalSalidas: salValidas.length,
+    totalInspecciones: inspRes.total,
+    habilitados,
+    totalConductores: conductores.length,
+    controles: cRes,
+    inspecciones: inspRes,
+    conductores: condsData,
+    tendencia: ult6
+  };
+}
+// </REGLAS_REPORTE>
+
+/* =========================================================
+   2) DATOS · IndexedDB
+   ========================================================= */
+const DB_NAME = 'volquetas_v3';
+let db = null;
+
+function abrirDB() {
+  return new Promise((res, rej) => {
+    if (!window.indexedDB) { rej(new Error('Este navegador no permite guardar datos.')); return; }
+    const rq = indexedDB.open(DB_NAME, 2);
+    rq.onupgradeneeded = e => {
+      const d = rq.result;
+      ['conductores', 'camiones', 'capacitaciones', 'salidas', 'inspecciones'].forEach(s => {
+        if (!d.objectStoreNames.contains(s)) d.createObjectStore(s, { keyPath: 'id' });
+      });
+      if (!d.objectStoreNames.contains('meta')) d.createObjectStore('meta', { keyPath: 'k' });
+    };
+    rq.onsuccess = () => {
+      const database = rq.result;
+      database.onversionchange = () => { database.close(); };
+      res(database);
+    };
+    rq.onerror = () => rej(rq.error || new Error('No se pudo abrir la base de datos.'));
+    rq.onblocked = () => rej(new Error('La base de datos está bloqueada por otra pestaña abierta. Cierra las demás pestañas de la app.'));
+  });
+}
+
+function tx(store, modo, fn) {
+  return new Promise((res, rej) => {
+    let t, rq;
+    try {
+      t = db.transaction(store, modo);
+      rq = fn(t.objectStore(store));
+    } catch (e) { rej(e); return; }
+    t.oncomplete = () => res(rq && 'result' in rq ? rq.result : undefined);
+    t.onerror = () => rej(t.error);
+    t.onabort = () => rej(t.error || new Error('Operación cancelada'));
+  });
+}
+const dbAll = s => tx(s, 'readonly', st => st.getAll());
+const dbPut = (s, o) => tx(s, 'readwrite', st => st.put(o));
+const dbClear = s => tx(s, 'readwrite', st => st.clear());
+const dbGetMeta = k => tx('meta', 'readonly', st => st.get(k));
+const dbSetMeta = (k, v) => dbPut('meta', { k, v });
+
+const S = {
+  rol: null, vista: 'login', p: {}, pila: [],
+  conductores: [], camiones: [], capacitaciones: [], salidas: [], inspecciones: [],
+  cfg: null, cierres: {}, sal: null, insp: null, hmax: 30, insmax: 15, cuestionarioTemp: null
+};
+
+function mezclarCfg(g) {
+  const d = JSON.parse(JSON.stringify(CFG_DEF));
+  if (!g) return d;
+  return Object.assign({}, d, g, {
+    pesos: Object.assign({}, d.pesos, g.pesos || {}),
+    limites: Object.assign({}, d.limites, g.limites || {}),
+    escala: (Array.isArray(g.escala) && g.escala.length === 3) ? g.escala : d.escala,
+    tramos: Array.isArray(g.tramos) ? g.tramos : d.tramos
+  });
+}
+
+async function cargarTodo() {
+  const r = await Promise.all([dbAll('conductores'), dbAll('camiones'), dbAll('capacitaciones'),
+                               dbAll('salidas'), dbAll('inspecciones'), dbGetMeta('cfg'), dbGetMeta('cierres')]);
+  S.conductores = r[0]; S.camiones = r[1]; S.capacitaciones = r[2]; S.salidas = r[3]; S.inspecciones = r[4];
+  S.cfg = mezclarCfg(r[5] && r[5].v);
+  S.cierres = (r[6] && r[6].v) || {};
+}
+
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+/* =========================================================
+   3) INTERFAZ
+   ========================================================= */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g,
+  c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const COP = n => '$' + String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+const NUM = (n, d = 2) => {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  let s = Number(n).toFixed(d);
+  if (s.indexOf('.') >= 0) s = s.replace(/\.?0+$/, '');
+  return s.replace('.', ',');
+};
+const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+const etiquetaMes = m => { const p = m.split('-'); return MESES[+p[1] - 1] + ' ' + p[0]; };
+const mesActual = () => mesDeTs(Date.now());
+const fmtFecha = ts => new Date(ts).toLocaleString('es-CO', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+const fmtDia = ts => new Date(ts).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' });
+const parseNum = v => { const n = parseFloat(String(v).replace(',', '.')); return isNaN(n) ? null : n; };
+
+const ico = p => '<svg class="i" viewBox="0 0 24 24" aria-hidden="true">' + p + '</svg>';
+const IC = {
+  salida: ico('<path d="M2 7h11v9H2z"/><path d="M13 10h4.5l3.5 3v3h-8z"/><circle cx="6" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/>'),
+  historial: ico('<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4h6v3H9z"/><path d="M8.5 12h7M8.5 16h5"/>'),
+  conductor: ico('<path d="M5 14a7 7 0 0 1 14 0"/><path d="M3 14h18v3H3z"/><path d="M12 7v4"/><circle cx="12" cy="21" r=".6"/>'),
+  camion: ico('<path d="M3 6h10v10H3z"/><path d="M13 9h4l3 3.5V16h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/>'),
+  cap: ico('<path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11.5V16c0 1.5 3 3 6 3s6-1.5 6-3v-4.5"/>'),
+  consolidado: ico('<path d="M4 20V11M10 20V4M16 20v-7M22 20H2"/>'),
+  config: ico('<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/>'),
+  respaldo: ico('<ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>'),
+  inspeccion: ico('<path d="M3 12h18M3 6h18M3 18h18"/><circle cx="9" cy="12" r="2"/>'),
+  reporte: ico('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>'),
+  check: ico('<path d="M4 12l5 5L20 6"/>'),
+  x: ico('<path d="M6 6l12 12M18 6L6 18"/>'),
+  camera: ico('<path d="M3 8h4l2-3h6l2 3h4v11H3z"/><circle cx="12" cy="13" r="3.5"/>'),
+  back: ico('<path d="M15 5l-7 7 7 7"/>'),
+  logout: ico('<path d="M10 4H5v16h5M15 8l4 4-4 4M19 12H9"/>'),
+  warn: ico('<path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.5"/>'),
+  plus: ico('<path d="M12 5v14M5 12h14"/>'),
+  search: ico('<circle cx="11" cy="11" r="6"/><path d="M20 20l-4-4"/>'),
+  lona: ico('<path d="M3 9h18l-2 9H5z"/><path d="M8 9v9M13 9v9M18 9l-1 9"/>'),
+  lavado: ico('<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 4v5M12 15v5M4 12h5M15 12h5"/>'),
+  humectacion: ico('<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>'),
+  carga: ico('<path d="M12 4v16M6 20h12M5 8h14M5 8l-3 7h6zM19 8l-3 7h6z"/>')
+};
+
+const MARCO_LOGICO = {
+  lona: 'Componente 1 · Cubrimiento de la carga',
+  lavado: 'Componente 2 · Limpieza de ruedas',
+  humectacion: 'Control del polvo',
+  habilitacion: 'Componente 4 · Concientización',
+  inspeccion: 'Propósito · indicadores 2 y 3 (material acumulado y polvo visible)'
+};
+
+let _tt = null;
+function toast(msg, tipo) {
+  const t = $('#toast');
+  t.textContent = msg; t.className = 'show ' + (tipo || '');
+  clearTimeout(_tt); _tt = setTimeout(() => { t.className = ''; }, 2800);
+}
+
+function modal(html, botones, cancelable) {
+  return new Promise(res => {
+    const m = $('#modal');
+    m.innerHTML = '<div class="mbox" role="dialog">' + html + '<div class="mbtn">' +
+      botones.map((b, i) => '<button class="btn ' + (b.cls || 'sec') + '" data-m="' + i + '">' + b.t + '</button>').join('') + '</div></div>';
+    m.classList.add('open');
+    const cerrar = v => { m.classList.remove('open'); m.innerHTML = ''; m.onclick = null; res(v); };
+    m.onclick = e => {
+      if (e.target === m && cancelable !== false) { cerrar(null); return; }
+      const b = e.target.closest('[data-m]'); if (!b) return;
+      const d = botones[+b.dataset.m];
+      const v = typeof d.val === 'function' ? d.val() : d.val;
+      if (v !== undefined) cerrar(v);
+    };
+  });
+}
+const confirmar = (titulo, html, okTxt, cls) => modal('<h3>' + titulo + '</h3><div class="mtxt">' + html + '</div>',
+  [{ t: 'Cancelar', cls: 'sec', val: false }, { t: okTxt || 'Aceptar', cls: cls || 'prim', val: true }]);
+const aviso = (titulo, html) => modal('<h3>' + titulo + '</h3><div class="mtxt">' + html + '</div>',
+  [{ t: 'Entendido', cls: 'prim', val: true }]);
+const pedirTexto = (titulo, msg) => modal('<h3>' + titulo + '</h3><div class="mtxt">' + msg +
+  '<textarea id="mtxt" placeholder="Escribe el motivo"></textarea><p id="merr" class="rojo"></p></div>',
+  [{ t: 'Cancelar', cls: 'sec', val: null },
+   { t: 'Confirmar', cls: 'danger', val: () => {
+       const v = $('#mtxt').value.trim();
+       if (v.length < 3) { $('#merr').textContent = 'Escribe el motivo (mínimo 3 letras).'; return undefined; }
+       return v; } }], false);
+const errorDB = e => { console.error(e); toast('Error al guardar: ' + (e && e.message ? e.message : e), 'bad'); };
+
+function go(v, p) {
+  S.pila.push({ v: S.vista, p: S.p });
+  S.vista = v; S.p = p || {};
+  if (v === 'salida') initSalida();
+  if (v === 'inspeccion') initInspeccion();
+  if (v === 'capacitaciones') initCuestionario();
+  try { history.pushState({}, ''); } catch (_) {}
+  render(); window.scrollTo(0, 0);
+}
+function reset(v) { S.pila = []; S.vista = v; S.p = {}; render(); window.scrollTo(0, 0); }
+function atras() {
+  const prev = S.pila.pop();
+  if (prev) { S.vista = prev.v; S.p = prev.p; }
+  else { S.vista = S.rol ? 'home' : 'login'; S.p = {}; }
+  render(); window.scrollTo(0, 0);
+}
+function refrescar() { const y = window.scrollY; render(); window.scrollTo(0, y); }
+
+const TITULOS = {
+  home: 'Panel principal', salida: 'Registrar salida', historial: 'Historial de salidas',
+  conductores: 'Conductores', condForm: 'Conductor', camiones: 'Camiones', camForm: 'Camión',
+  capacitaciones: 'Capacitaciones', consolidado: 'Consolidado y bonos', config: 'Configuración',
+  respaldo: 'Respaldo de datos', inspeccion: 'Inspección de vía', reporte: 'Reporte mensual'
+};
+
+function cabecera() {
+  if (S.vista === 'login') return '';
+  const esHome = S.vista === 'home';
+  return '<div class="top"><div class="hazard"></div><div class="bar">' +
+    (esHome ? '<div class="ib" style="background:var(--amber);color:#17120a">' + IC.salida + '</div>'
+            : '<button class="ib" data-a="atras" aria-label="Volver">' + IC.back + '</button>') +
+    '<div class="t"><b>' + esc(TITULOS[S.vista] || '') + '</b><small>Cantera Santa Rita · ' +
+    (S.rol === 'admin' ? 'Administrador' : 'Supervisor') + '</small></div>' +
+    '<button class="ib" data-a="salir" aria-label="Salir">' + IC.logout + '</button></div></div>';
+}
+
+function render() {
+  if (!S.rol && S.vista !== 'login') S.vista = 'login';
+  let cuerpo;
+  if ((S.vista === 'consolidado' || S.vista === 'config') && S.rol !== 'admin') {
+    cuerpo = '<div class="aviso bad">' + IC.warn + '<div>Esta sección es solo para el administrador.</div></div>';
+  } else {
+    const f = VISTAS[S.vista] || vHome;
+    cuerpo = f();
+  }
+  $('#app').innerHTML = cabecera() + (S.vista === 'login' ? cuerpo : '<main class="wrap">' + cuerpo + '</main>');
+  const post = POST[S.vista]; if (post) post();
+}
+
+/* ---------- Login ---------- */
+function vLogin() {
+  return '<div class="login"><div class="hazard"></div><div class="login-in">' +
+    '<div class="logo">' + IC.salida + '</div>' +
+    '<h1 class="cond">Control de salidas<br>de volquetas</h1>' +
+    '<p class="muted">Cantera Santa Rita · Bello, Antioquia</p>' +
+    '<form data-f="login" class="card"><label class="lbl" for="pin">PIN de acceso</label>' +
+    '<input id="pin" class="pin" type="password" inputmode="numeric" autocomplete="off" placeholder="••••">' +
+    '<button class="btn prim big" type="submit" style="margin-top:16px">ENTRAR</button></form></div></div>';
+}
+
+/* ---------- Panel principal ---------- */
+const SVG_CANTERA = '<svg class="cantera" viewBox="0 0 360 100" preserveAspectRatio="none" aria-hidden="true">' +
+  '<path d="M0 100V62l38-8 30-20 44-4 28-16 52 10 34 22 44-4 38 16 52-6v48z" fill="#2c343f"/>' +
+  '<path d="M0 100V78l46-6 34-14 40 2 34-12 46 14 40 12 42-6 78 10v22z" fill="#3a2f1f" opacity=".85"/>' +
+  '<path d="M0 100V90l60-4 50-8 60 4 70-6 120 8v16z" fill="#ffb020" opacity=".22"/></svg>';
+
+function statsHoy() {
+  const ini = new Date(); ini.setHours(0, 0, 0, 0);
+  const hoy = S.salidas.filter(s => !s.anulada && s.ts >= ini.getTime());
+  let ok = 0;
+  hoy.forEach(s => CONTROLES.forEach(c => { if (s[c.k]) ok++; }));
+  return { n: hoy.length, cumple: hoy.length ? Math.round(ok / (hoy.length * CONTROLES.length) * 100) : null };
+}
+
+function listaTiles() {
+  const t = [
+    { v: 'salida', ic: IC.salida, n: 'Registrar salida', s: 'Controles en la portería' },
+    { v: 'historial', ic: IC.historial, n: 'Historial de salidas', s: 'Fallas, fotos y detalle' },
+    { v: 'conductores', ic: IC.conductor, n: 'Conductores', s: S.conductores.length + ' registrados' },
+    { v: 'camiones', ic: IC.camion, n: 'Camiones', s: S.camiones.length + ' registrados' },
+    { v: 'capacitaciones', ic: IC.cap, n: 'Capacitaciones', s: 'Cuestionario y habilitación' },
+    { v: 'inspeccion', ic: IC.inspeccion, n: 'Inspección de vía', s: 'Polvo y material en la calle' },
+    { v: 'reporte', ic: IC.reporte, n: 'Reporte mensual', s: 'Evidencia del proyecto' }
+  ];
+  if (S.rol === 'admin') {
+    t.push({ v: 'consolidado', ic: IC.consolidado, n: 'Consolidado y bonos', s: 'Puntajes y pagos' });
+    t.push({ v: 'config', ic: IC.config, n: 'Configuración', s: 'Pesos, bonos y límites' });
+  }
+  t.push({ v: 'respaldo', ic: IC.respaldo, n: 'Respaldo de datos', s: 'Exportar e importar' });
+  return t;
+}
+
+function vHome() {
+  const h = statsHoy();
+  const bloq = S.conductores.filter(c => c.estado !== 'habilitado').length;
+  const fecha = new Date().toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' });
+  return '<section class="hero">' + SVG_CANTERA + '<div class="hero-in"><small class="cond">' + esc(fecha) + '</small>' +
+    '<h1 class="cond">' + (S.rol === 'admin' ? 'Ingeniería' : 'Portería') + '</h1><div class="kpis">' +
+    '<div><b>' + h.n + '</b><span>salidas hoy</span></div>' +
+    '<div><b>' + (h.cumple === null ? '—' : h.cumple + '%') + '</b><span>controles cumplidos</span></div>' +
+    '<div><b>' + bloq + '</b><span>sin habilitar</span></div></div></div></section>' +
+    '<div class="tiles">' + listaTiles().map(t =>
+      '<button class="tile" data-a="ir" data-v="' + t.v + '"><span class="ic">' + t.ic + '</span><span><b>' +
+      t.n + '</b><small>' + t.s + '</small></span></button>').join('') + '</div>';
+}
+
+/* ---------- Registrar salida ---------- */
+function initSalida() {
+  S.sal = { cid: null, camId: null, lona: null, lavado: null, humectacion: null, peso: '', obs: '', foto: null, q: '' };
+}
+const camionSel = () => S.camiones.find(c => c.id === S.sal.camId);
+
+function badgeEstado(e) {
+  if (e === 'habilitado') return '<span class="chip ok">Habilitado</span>';
+  if (e === 'recap') return '<span class="chip bad">Requiere recapacitación</span>';
+  return '<span class="chip warn">Pendiente de capacitación</span>';
+}
+
+function htmlListaCond() {
+  const q = S.sal.q.trim().toLowerCase();
+  const orden = { habilitado: 0, recap: 1, pendiente: 2 };
+  const l = S.conductores.filter(c => !q || c.nombre.toLowerCase().indexOf(q) >= 0 || String(c.cedula).indexOf(q) >= 0)
+    .sort((a, b) => (orden[a.estado] - orden[b.estado]) || a.nombre.localeCompare(b.nombre));
+  if (!l.length) return '<p class="vacio">' + (S.conductores.length ? 'Nadie coincide con la búsqueda.' : 'Aún no hay conductores. Créalos en "Conductores".') + '</p>';
+  return l.map(c => '<button class="opt ' + (S.sal.cid === c.id ? 'sel' : '') + '" data-a="selCond" data-id="' + c.id + '"><span><b>' +
+    esc(c.nombre) + '</b><small>CC ' + esc(c.cedula) + '</small></span>' + badgeEstado(c.estado) + '</button>').join('');
+}
+
+function htmlAvisoCond() {
+  const c = S.conductores.find(x => x.id === S.sal.cid);
+  if (!c) return '';
+  if (c.estado === 'habilitado') return '<div class="aviso ok">' + IC.check + '<div>' + esc(c.nombre) + ' está habilitado para salir.</div></div>';
+  const m = c.estado === 'recap' ? 'Su puntaje del mes quedó por debajo del mínimo: debe repetir la capacitación.'
+                                 : 'Aún no ha aprobado la capacitación.';
+  return '<div class="aviso bad">' + IC.warn + '<div><b>No puede registrar salidas.</b> ' + m + '</div></div>';
+}
+
+function ctlHtml(c) {
+  const v = S.sal[c.k];
+  return '<div class="ctl ' + (v === true ? 'si' : v === false ? 'no' : '') + '"><div class="ctl-t">' + IC[c.k] + '<span>' + c.nombre + '</span></div>' +
+    '<div class="seg"><button data-a="ctl" data-k="' + c.k + '" data-v="1" class="' + (v === true ? 'on' : '') + '">' + IC.check + ' CUMPLE</button>' +
+    '<button data-a="ctl" data-k="' + c.k + '" data-v="0" class="' + (v === false ? 'on bad' : '') + '">' + IC.x + ' NO CUMPLE</button></div></div>';
+}
+
+function textoLimite(cam) {
+  const L = limiteCarga(cam, S.cfg);
+  let t = 'El camión puede cargar <b>' + NUM(L.capacidad) + ' t</b>. La vía permite <b>' + NUM(L.pbv) +
+    ' t</b> de peso bruto (' + (TIPOS[cam.tipo] || '') + ')';
+  if (L.conTara) t += ', menos ' + NUM(L.tara) + ' t del camión vacío = <b>' + NUM(L.legal) + ' t</b> de carga';
+  t += '. ';
+  if (L.marca === 'via') {
+    t += '<b>Límite que aplica: ' + NUM(L.limite) + ' t.</b> Aunque el camión resista más, el límite lo marca la carretera, no el camión.';
+  } else {
+    t += '<b>Límite que aplica: ' + NUM(L.limite) + ' t</b> (lo marca el camión; la vía permitiría hasta ' + NUM(L.legal) + ' t).';
+  }
+  if (!L.conTara) t += ' <span class="muted">Sin peso vacío registrado: el límite de la vía se compara con el peso ingresado.</span>';
+  return t;
+}
+
+function htmlMedidor() {
+  const cam = camionSel();
+  if (!cam) return '<p class="nota">Elige un camión para ver el límite de carga.</p>';
+  let h = '<div class="limbox">' + textoLimite(cam) + '</div>';
+  const peso = parseNum(S.sal.peso);
+  if (peso === null || peso <= 0) return h;
+  const ev = evaluarCarga(peso, cam, S.cfg);
+  const max = Math.max(ev.limite * 1.3, peso * 1.05, 0.1);
+  const pc = x => Math.max(0, Math.min(100, x / max * 100));
+  let zg = ev.limite, zy = 0;
+  if (ev.rec > 0 && ev.rec < ev.limite) { zg = ev.rec; zy = ev.limite - ev.rec; }
+  h += '<div class="medidor"><i class="zg" style="width:' + pc(zg) + '%"></i><i class="zy" style="width:' + pc(zy) + '%"></i>' +
+    '<i class="zr" style="width:' + (100 - pc(zg) - pc(zy)) + '%"></i><span class="mk" style="left:' + pc(peso) + '%"></span></div>' +
+    '<div class="escala"><em style="left:' + Math.min(88, Math.max(12, pc(ev.limite))) + '%">límite ' + NUM(ev.limite) + ' t</em></div>';
+  if (ev.cumple) {
+    h += '<div class="veredicto ok">' + IC.check + '<div>CUMPLE · ' + NUM(peso) + ' t de ' + NUM(ev.limite) + ' t permitidas' +
+      (ev.sobreRec ? '<small>Pasa la referencia recomendada de ' + NUM(ev.rec) + ' t (genera más desgaste en la vía).</small>' : '') + '</div></div>';
+  } else {
+    h += '<div class="veredicto no">' + IC.x + '<div>NO CUMPLE · excede en ' + NUM(ev.exceso > 0 ? ev.exceso : peso - ev.rec) + ' t' +
+      '<small>' + (ev.exceso > 0 ? (ev.marca === 'via' ? 'Pasa el límite de la vía para este tipo de camión.' : 'Pasa la capacidad del camión.')
+                                 : 'Pasa la referencia vial recomendada, que la empresa exige.') + '</small></div></div>';
+  }
+  return h;
+}
+
+function vSalida() {
+  const s = S.sal;
+  const opts = S.camiones.map(c => '<option value="' + c.id + '"' + (s.camId === c.id ? ' selected' : '') + '>' +
+    esc(c.placa) + ' · ' + esc(TIPOS[c.tipo] || '') + ' · ' + NUM(c.capacidad) + ' t</option>').join('');
+  return '<h1 class="tit">Registrar salida</h1>' +
+    '<section class="card"><h2 class="paso"><b>1</b>Conductor</h2>' +
+    '<div class="buscar">' + IC.search + '<input id="q" data-i="busca" placeholder="Buscar por nombre o cédula" autocomplete="off" value="' + esc(s.q) + '"></div>' +
+    '<div id="listaCond" class="lista-sel">' + htmlListaCond() + '</div><div id="avisoCond">' + htmlAvisoCond() + '</div></section>' +
+    '<section class="card"><h2 class="paso"><b>2</b>Camión</h2>' +
+    (S.camiones.length ? '<select id="selCam" data-c="cam"><option value="">— Elige el camión —</option>' + opts + '</select>'
+                       : '<p class="muted">Aún no hay camiones. Créalos en "Camiones".</p>') + '</section>' +
+    '<section class="card"><h2 class="paso"><b>3</b>Controles de prevención</h2>' + CONTROLES.slice(0, 3).map(ctlHtml).join('') + '</section>' +
+    '<section class="card"><h2 class="paso"><b>4</b>Carga</h2><label class="lbl" for="peso">Peso de báscula (toneladas)</label>' +
+    '<input id="peso" data-i="peso" inputmode="decimal" placeholder="Ej: 15,5" autocomplete="off" value="' + esc(s.peso) + '">' +
+    '<div id="medidor">' + htmlMedidor() + '</div></section>' +
+    '<section class="card"><h2 class="paso"><b>5</b>Evidencia y observaciones</h2>' +
+    '<label class="fotoBtn" for="fotoIn">' + IC.camera + (s.foto ? ' Cambiar foto' : ' Tomar foto (opcional)') + '</label>' +
+    '<input id="fotoIn" type="file" accept="image/*" capture="environment" data-c="foto" hidden>' +
+    (s.foto ? '<img class="prevFoto" src="' + s.foto + '" alt="Vista previa de la foto">' : '') +
+    '<label class="lbl" for="obs">Observaciones (opcional)</label><textarea id="obs" data-i="obs" placeholder="Ej: llanta delantera con barro">' + esc(s.obs) + '</textarea></section>' +
+    '<button class="btn prim big" data-a="guardarSalida">REVISAR Y GUARDAR</button>';
+}
+
+function comprimirImagen(file, max, q) {
+  return new Promise((res, rej) => {
+    const img = new Image(); const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const k = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url); res(c.toDataURL('image/jpeg', q));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('No se pudo leer la foto.')); };
+    img.src = url;
+  });
+}
+
+async function guardarSalida() {
+  const s = S.sal, err = [];
+  const cond = S.conductores.find(c => c.id === s.cid), cam = camionSel(), peso = parseNum(s.peso);
+  if (!cond) err.push('Elige el conductor.');
+  else if (cond.estado !== 'habilitado') err.push('El conductor no está habilitado para salir.');
+  if (!cam) err.push('Elige el camión.');
+  CONTROLES.slice(0, 3).forEach(c => { if (s[c.k] === null) err.push('Marca si cumple: ' + c.nombre + '.'); });
+  if (peso === null || peso <= 0) err.push('El peso debe ser mayor a cero.');
+  if (err.length) { aviso('Falta completar', '<ul>' + err.map(e => '<li>' + e + '</li>').join('') + '</ul>'); return; }
+  const ev = evaluarCarga(peso, cam, S.cfg);
+  const fila = (n, ok) => '<li>' + n + ': <b class="' + (ok ? '' : 'rojo') + '">' + (ok ? 'Cumple' : 'NO cumple') + '</b></li>';
+  const ok = await confirmar('Confirmar salida',
+    '<p><b>' + esc(cond.nombre) + '</b> · ' + esc(cam.placa) + '</p><ul>' +
+    fila('Lona o malla', s.lona) + fila('Lavado de llantas', s.lavado) + fila('Humectación', s.humectacion) +
+    fila('Carga (' + NUM(peso) + ' t de ' + NUM(ev.limite) + ' t)', ev.cumple) + '</ul>' +
+    '<p class="muted">Una vez guardada no se puede editar; solo anular con motivo.</p>', 'GUARDAR SALIDA');
+  if (!ok) return;
+  const ts = Date.now();
+  const reg = { id: uid(), ts, mes: mesDeTs(ts), conductorId: cond.id, conductorNombre: cond.nombre,
+    camionId: cam.id, placa: cam.placa, lona: s.lona, lavado: s.lavado, humectacion: s.humectacion,
+    carga: ev.cumple, peso, capacidad: ev.capacidad, limite: ev.limite, obs: s.obs.trim(), foto: s.foto, anulada: false };
+  try {
+    await dbPut('salidas', reg); S.salidas.push(reg);
+    toast('Salida guardada', 'ok'); initSalida(); render(); window.scrollTo(0, 0);
+  } catch (e) { errorDB(e); }
+}
+
+/* ---------- Inspección de Vía (vista nueva `inspeccion`) ---------- */
+function initInspeccion() {
+  S.insp = { tramo: '', polvo: null, material: null, obs: '', foto: null };
+}
+
+function ctlInspHtml(k, nombre) {
+  const v = S.insp[k];
+  return '<div class="ctl ' + (v === true ? 'si' : v === false ? 'no' : '') + '"><div class="ctl-t"><span>' + nombre + '</span></div>' +
+    '<div class="seg"><button data-a="ctlInsp" data-k="' + k + '" data-v="1" class="' + (v === true ? 'on' : '') + '">' + IC.check + ' CUMPLE</button>' +
+    '<button data-a="ctlInsp" data-k="' + k + '" data-v="0" class="' + (v === false ? 'on bad' : '') + '">' + IC.x + ' NO CUMPLE</button></div></div>';
+}
+
+function vInspeccion() {
+  const ins = S.insp;
+  const tramosCfg = S.cfg.tramos || [];
+  let tramoInput = tramosCfg.length ?
+    '<select id="inspTramo" data-c="inspTramo"><option value="">— Elige el tramo o calle —</option>' + tramosCfg.map(t => '<option value="' + esc(t) + '"' + (ins.tramo === t ? ' selected' : '') + '>' + esc(t) + '</option>').join('') + '</select>' :
+    '<input id="inspTramo" data-i="inspTramo" placeholder="Ej: Vía principal acceso cantera" autocomplete="off" value="' + esc(ins.tramo) + '">';
+
+  const mes = mesActual();
+  const lista = S.inspecciones.filter(i => i.mes === mes).sort((a, b) => b.ts - a.ts).slice(0, S.insmax);
+
+  const listaHtml = lista.map(i => {
+    const estado = i.anulada ? '<span class="chip gris">ANULADA</span>' : (!i.polvo || !i.material ? '<span class="chip bad">Incumple vía</span>' : '<span class="chip ok">Vía óptima</span>');
+    return '<article class="sal ' + (i.anulada ? 'anul' : '') + '"><header><div><b>' + esc(i.tramo) + '</b><small>' + fmtFecha(i.ts) + '</small></div>' + estado + '</header>' +
+      '<div class="chips">' +
+      '<span class="chip ' + (i.polvo ? 'ok' : 'bad') + '">' + (i.polvo ? IC.check : IC.x) + ' Sin polvo visible</span>' +
+      '<span class="chip ' + (i.material ? 'ok' : 'bad') + '">' + (i.material ? IC.check : IC.x) + ' Libre de material</span>' +
+      '</div>' +
+      (i.obs ? '<p class="obs">“' + esc(i.obs) + '”</p>' : '') +
+      (i.anulada ? '<p class="obs">Motivo de anulación: ' + esc(i.motivoAnulacion) + '</p>' : '') +
+      '<div class="acc">' + (i.foto ? '<button class="foto" data-a="verFotoInsp" data-id="' + i.id + '"><img src="' + i.foto + '" alt="Foto de vía"><span>' + IC.camera + ' Ver foto</span></button>'
+                                  : '<span class="muted sin">Sin foto</span>') +
+      (!i.anulada ? '<button class="btn sec sm" data-a="anularInsp" data-id="' + i.id + '">Anular</button>' : '') + '</div></article>';
+  }).join('');
+
+  return '<h1 class="tit">Inspección de vía</h1>' +
+    '<section class="card"><h2 class="paso"><b>1</b>Tramo o calle</h2>' +
+    '<label class="lbl" for="inspTramo">Ubicación de la inspección</label>' + tramoInput + '</section>' +
+    '<section class="card"><h2 class="paso"><b>2</b>Controles de calle</h2>' +
+    ctlInspHtml('polvo', 'Vía sin polvo visible') + ctlInspHtml('material', 'Vía libre de material acumulado') + '</section>' +
+    '<section class="card"><h2 class="paso"><b>3</b>Evidencia y observaciones</h2>' +
+    '<label class="fotoBtn" for="fotoInspIn">' + IC.camera + (ins.foto ? ' Cambiar foto' : ' Tomar foto de la vía (opcional)') + '</label>' +
+    '<input id="fotoInspIn" type="file" accept="image/*" capture="environment" data-c="fotoInsp" hidden>' +
+    (ins.foto ? '<img class="prevFoto" src="' + ins.foto + '" alt="Vista previa">' : '') +
+    '<label class="lbl" for="inspObs">Observaciones (opcional)</label><textarea id="inspObs" data-i="inspObs" placeholder="Ej: acumulación leve por lluvia">' + esc(ins.obs) + '</textarea></section>' +
+    '<button class="btn prim big" data-a="guardarInspeccion">REVISAR Y GUARDAR INSPECCIÓN</button>' +
+    '<h2 class="tit" style="font-size:20px;margin-top:24px">Inspecciones de este mes</h2>' +
+    (listaHtml || '<p class="vacio">No hay inspecciones registradas este mes.</p>');
+}
+
+async function guardarInspeccion() {
+  const ins = S.insp, err = [];
+  if (!ins.tramo.trim()) err.push('Elige o escribe el tramo.');
+  if (ins.polvo === null) err.push('Indica si la vía está sin polvo visible.');
+  if (ins.material === null) err.push('Indica si la vía está libre de material acumulado.');
+  if (err.length) { aviso('Falta completar', '<ul>' + err.map(e => '<li>' + e + '</li>').join('') + '</ul>'); return; }
+
+  const ok = await confirmar('Confirmar inspección',
+    '<p>Tramo: <b>' + esc(ins.tramo) + '</b></p><ul>' +
+    '<li>Sin polvo visible: <b>' + (ins.polvo ? 'Cumple' : 'NO cumple') + '</b></li>' +
+    '<li>Libre de material: <b>' + (ins.material ? 'Cumple' : 'NO cumple') + '</b></li></ul>', 'GUARDAR');
+  if (!ok) return;
+
+  const ts = Date.now();
+  const reg = { id: uid(), ts, mes: mesDeTs(ts), tramo: ins.tramo.trim(), polvo: ins.polvo, material: ins.material, obs: ins.obs.trim(), foto: ins.foto, anulada: false };
+  try {
+    await dbPut('inspecciones', reg); S.inspecciones.push(reg);
+    toast('Inspección guardada', 'ok'); initInspeccion(); render(); window.scrollTo(0, 0);
+  } catch (e) { errorDB(e); }
+}
+
+/* ---------- Reporte Mensual (vista nueva `reporte`) ---------- */
+function vReporte() {
+  const mes = S.p.mes || mesActual();
+  const d = datosReporteMensual(mes, S.salidas, S.inspecciones, S.conductores, S.capacitaciones, S.cfg);
+  const glob = cumplimientoGlobal(mes, S.salidas, S.cfg);
+
+  const controlesHtml = CONTROLES.map(c => {
+    const info = d.controles[c.k];
+    const marco = MARCO_LOGICO[c.k] || '';
+    return '<div class="card" style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:flex-start"><div><b>' + c.nombre + '</b><small style="display:block;color:var(--mut)">' + esc(marco) + '</small></div>' +
+      '<b style="font-size:20px;color:var(--amber)">' + (info.pct === null ? '—' : NUM(info.pct, 1) + '%') + '</b></div>' +
+      '<p class="muted" style="margin-top:6px">' + info.ok + ' cumplidas · ' + info.fallas + ' fallas</p></div>';
+  }).join('');
+
+  const tramosTabla = d.inspecciones.porTramo.length ?
+    '<div class="tabla-w" style="margin-top:10px"><table><thead><tr><th class="n">Tramo</th><th>Inspecciones</th><th>Con polvo</th><th>Con material</th></tr></thead><tbody>' +
+    d.inspecciones.porTramo.map(t => '<tr><td class="n"><b>' + esc(t.tramo) + '</b></td><td>' + t.total + '</td><td>' + t.polvo + '</td><td>' + t.material + '</td></tr>').join('') +
+    '</tbody></table></div>' : '<p class="muted">Sin registros por tramo este mes.</p>';
+
+  const condsTabla = d.conductores.length ?
+    '<div class="tabla-w" style="margin-top:10px"><table><thead><tr><th class="n">Conductor</th><th>Salidas</th>' + CONTROLES.map(c => '<th>% ' + c.corto + '</th>').join('') + '</tr></thead><tbody>' +
+    d.conductores.map(x => '<tr><td class="n"><b>' + esc(x.conductor.nombre) + '</b></td><td>' + x.salidas + '</td>' +
+      CONTROLES.map(c => '<td>' + NUM(x.pct[c.k], 1) + '</td>').join('') + '</tr>').join('') +
+    '</tbody></table></div>' : '<p class="muted">Sin salidas de conductores este mes.</p>';
+
+  const tendenciaHtml = d.tendencia.map(t => {
+    const pctG = t.global !== null ? t.global : 0;
+    const pctP = t.polvo !== null ? t.polvo : 0;
+    const txtG = t.global !== null ? NUM(t.global, 1) + '%' : '—';
+    const txtP = t.polvo !== null ? NUM(t.polvo, 1) + '%' : '—';
+    return '<div style="margin-bottom:12px">' +
+      '<div class="barra-info"><span>' + t.etiqueta + '</span><span>Salidas: ' + txtG + ' · Vía sin polvo: ' + txtP + '</span></div>' +
+      '<div class="barra-track" style="margin-bottom:4px"><div class="barra-fill" style="width:' + pctG + '%; background:var(--amber)"></div></div>' +
+      '<div class="barra-track"><div class="barra-fill" style="width:' + pctP + '%; background:var(--ok)"></div></div>' +
+      '</div>';
+  }).join('');
+
+  return '<h1 class="tit">Reporte mensual</h1>' +
+    '<select data-c="repMes" aria-label="Mes" style="margin-bottom:14px">' + mesesDisponibles().map(m => '<option value="' + m + '"' + (m === mes ? ' selected' : '') + '>' + etiquetaMes(m) + '</option>').join('') + '</select>' +
+    
+    '<section class="card"><h2 class="paso"><b>a</b>Resumen general</h2>' +
+    '<div class="resumen"><div class="res"><small>Salidas válidas</small><b>' + d.totalSalidas + '</b></div>' +
+    '<div class="res"><small>Inspecciones de vía</small><b>' + d.totalInspecciones + '</b></div>' +
+    '<div class="res" style="grid-column:1/-1"><small>' + esc(MARCO_LOGICO.habilitacion) + '</small><b>' + d.habilitados + ' de ' + d.totalConductores + '</b><em class="muted">Conductores habilitados</em></div></div></section>' +
+
+    '<section class="card"><h2 class="paso"><b>b</b>Cumplimiento por control de salidas</h2>' + controlesHtml + '</section>' +
+
+    '<section class="card"><h2 class="paso"><b>c</b>Inspecciones de vía</h2>' +
+    '<p class="muted" style="margin-bottom:10px">' + esc(MARCO_LOGICO.inspeccion) + '</p>' +
+    '<div class="resumen"><div class="res"><small>Sin polvo visible</small><b>' + (d.inspecciones.pctPolvo === null ? '—' : NUM(d.inspecciones.pctPolvo, 1) + '%') + '</b></div>' +
+    '<div class="res"><small>Sin material acumulado</small><b>' + (d.inspecciones.pctMaterial === null ? '—' : NUM(d.inspecciones.pctMaterial, 1) + '%') + '</b></div></div>' +
+    tramosTabla + '</section>' +
+
+    '<section class="card"><h2 class="paso"><b>d</b>Cumplimiento por conductor</h2>' + condsTabla + '</section>' +
+
+    '<section class="card"><h2 class="paso"><b>e</b>Tendencia últimos 6 meses</h2>' +
+    '<p class="nota" style="margin-bottom:12px">Leyenda: <span style="color:var(--amber);font-weight:700">■ Ámbar: salidas</span> · <span style="color:var(--ok);font-weight:700">■ Verde: vía sin polvo</span></p>' +
+    tendenciaHtml + '</section>' +
+
+    '<button class="btn prim big" data-a="imprimirReporte">IMPRIMIR / PDF</button>';
+}
+
+function imprimirReporteMes(mes) {
+  const d = datosReporteMensual(mes, S.salidas, S.inspecciones, S.conductores, S.capacitaciones, S.cfg);
+  const glob = cumplimientoGlobal(mes, S.salidas, S.cfg);
+
+  $('#print').innerHTML = '<h1>Reporte de Evidencia del Proyecto · ' + etiquetaMes(mes) + '</h1>' +
+    '<p><b>Cantera Santa Rita</b> · Marco Lógico de Transporte de Materiales Pétreos</p>' +
+    '<h3>1. Resumen</h3>' +
+    '<p>Salidas válidas: <b>' + d.totalSalidas + '</b> | Inspecciones de vía: <b>' + d.totalInspecciones + '</b> | Conductores habilitados (' + MARCO_LOGICO.habilitacion + '): <b>' + d.habilitados + ' / ' + d.totalConductores + '</b> | Cumplimiento global de salidas: <b>' + (glob === null ? '—' : NUM(glob, 1) + '%') + '</b></p>' +
+    
+    '<h3>2. Cumplimiento por control de salidas</h3>' +
+    '<ul>' + CONTROLES.map(c => '<li><b>' + c.nombre + '</b> (' + MARCO_LOGICO[c.k] + '): <b>' + (d.controles[c.k].pct === null ? '—' : NUM(d.controles[c.k].pct, 1) + '%') + '</b> (' + d.controles[c.k].fallas + ' fallas)</li>').join('') + '</ul>' +
+
+    '<h3>3. Inspecciones de vía (' + MARCO_LOGICO.inspeccion + ')</h3>' +
+    '<p>Sin polvo visible: <b>' + (d.inspecciones.pctPolvo === null ? '—' : NUM(d.inspecciones.pctPolvo, 1) + '%') + '</b> | Sin material acumulado: <b>' + (d.inspecciones.pctMaterial === null ? '—' : NUM(d.inspecciones.pctMaterial, 1) + '%') + '</b></p>' +
+    (d.inspecciones.porTramo.length ? '<table><thead><tr><th>Tramo</th><th>Inspecciones</th><th>Con polvo</th><th>Con material</th></tr></thead><tbody>' +
+      d.inspecciones.porTramo.map(t => '<tr><td style="text-align:left">' + esc(t.tramo) + '</td><td>' + t.total + '</td><td>' + t.polvo + '</td><td>' + t.material + '</td></tr>').join('') +
+      '</tbody></table>' : '') +
+
+    '<h3>4. Cumplimiento por conductor</h3>' +
+    (d.conductores.length ? '<table><thead><tr><th>Conductor</th><th>Salidas</th>' + CONTROLES.map(c => '<th>% ' + c.corto + '</th>').join('') + '</tr></thead><tbody>' +
+      d.conductores.map(x => '<tr><td style="text-align:left">' + esc(x.conductor.nombre) + '</td><td>' + x.salidas + '</td>' +
+        CONTROLES.map(c => '<td>' + NUM(x.pct[c.k], 1) + '</td>').join('') + '</tr>').join('') +
+      '</tbody></table>' : '<p>Sin registros este mes.</p>') +
+
+    '<h3>5. Tendencia últimos 6 meses</h3>' +
+    '<ul>' + d.tendencia.map(t => '<li>' + t.etiqueta + ': Salidas ' + (t.global !== null ? NUM(t.global, 1) + '%' : '—') + ' | Vía sin polvo ' + (t.polvo !== null ? NUM(t.polvo, 1) + '%' : '—') + '</li>').join('') + '</ul>';
+
+  window.print();
+}
+
+/* ---------- Historial de salidas ---------- */
+function mesesDisponibles() {
+  const set = {}; set[mesActual()] = 1;
+  S.salidas.forEach(s => { set[s.mes] = 1; });
+  S.inspecciones.forEach(i => { set[i.mes] = 1; });
+  return Object.keys(set).sort().reverse();
+}
+
+function barrasFallas(r) {
+  return CONTROLES.map(c => {
+    const pc = r.pct[c.k];
+    const cls = pc >= 90 ? '' : pc >= 70 ? 'm' : 'p';
+    return '<div class="barra"><div class="h"><span>' + c.nombre + '</span><span><b>' + NUM(pc, 1) + '%</b> · ' +
+      r.fallas[c.k] + ' falla' + (r.fallas[c.k] === 1 ? '' : 's') + '</span></div><div class="b"><i class="' + cls + '" style="width:' + pc + '%"></i></div></div>';
+  }).join('');
+}
+
+function cardSalida(s) {
+  const fallo = CONTROLES.filter(c => !s[c.k]);
+  const estado = s.anulada ? '<span class="chip gris">ANULADA</span>'
+    : fallo.length ? '<span class="chip bad">' + fallo.length + ' falla' + (fallo.length > 1 ? 's' : '') + '</span>'
+    : '<span class="chip ok">Todo en regla</span>';
+  return '<article class="sal ' + (s.anulada ? 'anul' : '') + '"><header><div><b>' + esc(s.conductorNombre) + '</b><small>' +
+    fmtFecha(s.ts) + ' · ' + esc(s.placa) + '</small></div>' + estado + '</header>' +
+    '<div class="chips">' + CONTROLES.map(c => '<span class="chip ' + (s[c.k] ? 'ok' : 'bad') + '">' + (s[c.k] ? IC.check : IC.x) + ' ' + c.corto + '</span>').join('') + '</div>' +
+    '<p>Peso: <b>' + NUM(s.peso) + ' t</b> · límite ' + NUM(s.limite) + ' t' +
+    (s.peso > s.limite ? ' · <span class="rojo">excede ' + NUM(s.peso - s.limite) + ' t</span>' : '') + '</p>' +
+    (fallo.length && !s.anulada ? '<p class="falla">Falló: <b>' + fallo.map(c => c.corto).join(', ') + '</b></p>' : '') +
+    (s.obs ? '<p class="obs">“' + esc(s.obs) + '”</p>' : '') +
+    (s.anulada ? '<p class="obs">Motivo de anulación: ' + esc(s.motivoAnulacion) + '</p>' : '') +
+    '<div class="acc">' + (s.foto ? '<button class="foto" data-a="verFoto" data-id="' + s.id + '"><img src="' + s.foto + '" alt="Foto de evidencia"><span>' + IC.camera + ' Ver foto</span></button>'
+                                  : '<span class="muted sin">Sin foto</span>') +
+    (!s.anulada ? '<button class="btn sec sm" data-a="anular" data-id="' + s.id + '">Anular</button>' : '') + '</div></article>';
+}
+
+function vHistorial() {
+  const mes = S.p.mes || mesActual(), cid = S.p.cid || '';
+  const lista = S.salidas.filter(s => s.mes === mes && (!cid || s.conductorId === cid)).sort((a, b) => b.ts - a.ts);
+  const validas = lista.filter(s => !s.anulada);
+  let resumen;
+  if (cid) {
+    const r = calcularConductorMes(cid, mes, S.salidas, S.capacitaciones, S.cfg);
+    const c = S.conductores.find(x => x.id === cid);
+    resumen = '<section class="card"><h2 class="paso" style="margin-bottom:6px">En qué falla ' + esc(c ? c.nombre : '') + '</h2>' +
+      (r.n ? '<p class="muted">' + r.n + ' salida' + (r.n === 1 ? '' : 's') + ' en ' + etiquetaMes(mes) + ' · puntaje <b style="color:var(--amber)">' + NUM(r.puntaje, 1) +
+        '</b> · bono ' + r.pctBono + '% (' + COP(r.bono) + ')</p>' + barrasFallas(r) +
+        (r.ponderadas ? '<p class="nota">⚖ ' + r.ponderadas + ' salida(s) anteriores a su última capacitación pesan solo ' + S.cfg.pesoPrevias + ' % en el puntaje.</p>' : '')
+        : '<p class="muted">Sin salidas en este mes.</p>') + '</section>';
+  } else {
+    const fall = {}; CONTROLES.forEach(c => { fall[c.k] = validas.filter(s => !s[c.k]).length; });
+    resumen = '<section class="card"><h2 class="paso" style="margin-bottom:6px">Fallas de ' + etiquetaMes(mes) + '</h2>' +
+      (validas.length ? '<p class="muted">' + validas.length + ' salidas válidas</p>' + CONTROLES.map(c => {
+        const pc = (1 - fall[c.k] / validas.length) * 100, cls = pc >= 90 ? '' : pc >= 70 ? 'm' : 'p';
+        return '<div class="barra"><div class="h"><span>' + c.nombre + '</span><span><b>' + fall[c.k] + '</b> falla' + (fall[c.k] === 1 ? '' : 's') +
+          ' · ' + NUM(pc, 1) + '% cumple</span></div><div class="b"><i class="' + cls + '" style="width:' + pc + '%"></i></div></div>';
+      }).join('') : '<p class="muted">Sin salidas en este mes.</p>') + '</section>';
+  }
+  const conds = S.conductores.slice().sort((a, b) => a.nombre.localeCompare(b.nombre));
+  const mostrar = lista.slice(0, S.hmax);
+  return '<h1 class="tit">Historial de salidas</h1><div class="fila" style="margin-bottom:14px">' +
+    '<select data-c="hMes" aria-label="Mes">' + mesesDisponibles().map(m => '<option value="' + m + '"' + (m === mes ? ' selected' : '') + '>' + etiquetaMes(m) + '</option>').join('') + '</select>' +
+    '<select data-c="hCond" aria-label="Conductor"><option value="">Todos</option>' + conds.map(c => '<option value="' + c.id + '"' + (c.id === cid ? ' selected' : '') + '>' + esc(c.nombre) + '</option>').join('') + '</select></div>' +
+    resumen + (mostrar.length ? mostrar.map(cardSalida).join('') : '<p class="vacio">No hay salidas con este filtro.</p>') +
+    (lista.length > S.hmax ? '<button class="btn sec" data-a="masSalidas">Ver más (' + (lista.length - S.hmax) + ' restantes)</button>' : '');
+}
+
+/* ---------- Conductores ---------- */
+function vConductores() {
+  const mes = mesActual();
+  const filas = S.conductores.slice().sort((a, b) => a.nombre.localeCompare(b.nombre)).map(c => {
+    const r = calcularConductorMes(c.id, mes, S.salidas, S.capacitaciones, S.cfg);
+    const cam = S.camiones.find(x => x.conductorId === c.id);
+    return '<article class="item"><header><div><b>' + esc(c.nombre) + '</b><small>CC ' + esc(c.cedula) + ' · ' + esc(c.telefono) + '</small></div>' + badgeEstado(c.estado) + '</header>' +
+      '<p class="muted">' + (cam ? 'Camión ' + esc(cam.placa) : 'Sin camión asignado') + (c.fechaHab ? ' · Habilitado ' + fmtDia(c.fechaHab) : '') + '</p>' +
+      (r.n ? '<p>Este mes: <b>' + r.n + '</b> salidas · puntaje <b>' + NUM(r.puntaje, 1) + '</b></p>' : '') +
+      '<div class="acc"><button class="btn sec sm" data-a="verCond" data-id="' + c.id + '">Ver fallas y salidas</button>' +
+      '<button class="btn sec sm" data-a="editCond" data-id="' + c.id + '">Editar</button></div></article>';
+  }).join('');
+  return '<h1 class="tit">Conductores</h1><button class="btn prim big" data-a="nuevoCond">' + IC.plus + ' NUEVO CONDUCTOR</button>' +
+    (filas || '<p class="vacio">Aún no hay conductores.</p>');
+}
+
+function vCondForm() {
+  const c = S.conductores.find(x => x.id === S.p.id) || {};
+  return '<h1 class="tit">' + (c.id ? 'Editar conductor' : 'Nuevo conductor') + '</h1><section class="card">' +
+    '<label class="lbl" for="fNom">Nombre completo</label><input id="fNom" value="' + esc(c.nombre || '') + '" autocomplete="off">' +
+    '<label class="lbl" for="fCed">Cédula</label><input id="fCed" inputmode="numeric" value="' + esc(c.cedula || '') + '" autocomplete="off">' +
+    '<label class="lbl" for="fTel">Teléfono</label><input id="fTel" inputmode="tel" value="' + esc(c.telefono || '') + '" autocomplete="off">' +
+    (c.id ? '' : '<p class="nota">Queda <b>pendiente de capacitación</b> hasta que apruebe el cuestionario.</p>') + '</section>' +
+    '<button class="btn prim big" data-a="guardarCond" data-id="' + (c.id || '') + '">GUARDAR</button>';
+}
+
+async function guardarCond(id) {
+  const nombre = $('#fNom').value.trim().replace(/\s+/g, ' '), ced = $('#fCed').value.replace(/\D/g, ''), tel = $('#fTel').value.replace(/[^\d+]/g, '');
+  const err = [];
+  if (nombre.length < 5) err.push('Escribe el nombre completo.');
+  if (ced.length < 5 || ced.length > 12) err.push('La cédula debe tener entre 5 y 12 dígitos.');
+  if (S.conductores.some(c => c.cedula === ced && c.id !== id)) err.push('Ya existe un conductor con esa cédula.');
+  if (tel.replace(/\D/g, '').length < 7) err.push('Escribe un teléfono válido.');
+  if (err.length) { aviso('Revisa los datos', '<ul>' + err.map(e => '<li>' + e + '</li>').join('') + '</ul>'); return; }
+  try {
+    let c = S.conductores.find(x => x.id === id);
+    if (c) { c.nombre = nombre; c.cedula = ced; c.telefono = tel; }
+    else { c = { id: uid(), nombre, cedula: ced, telefono: tel, estado: 'pendiente', fechaHab: null }; S.conductores.push(c); }
+    await dbPut('conductores', c);
+    toast('Conductor guardado', 'ok'); atras();
+  } catch (e) { errorDB(e); }
+}
+
+/* ---------- Camiones ---------- */
+function vCamiones() {
+  const filas = S.camiones.slice().sort((a, b) => a.placa.localeCompare(b.placa)).map(c => {
+    const L = limiteCarga(c, S.cfg), cond = S.conductores.find(x => x.id === c.conductorId);
+    return '<article class="item"><header><div><b>' + esc(c.placa) + '</b><small>' + esc(TIPOS[c.tipo] || '') + ' · capacidad ' + NUM(c.capacidad) + ' t' +
+      (c.tara ? ' · vacío ' + NUM(c.tara) + ' t' : '') + '</small></div>' +
+      '<span class="chip ' + (L.marca === 'via' ? 'warn' : 'gris') + '">Límite ' + NUM(L.limite) + ' t</span></header>' +
+      '<p class="nota">' + textoLimite(c) + '</p><p class="muted">' + (cond ? 'Conductor: ' + esc(cond.nombre) : 'Sin conductor asignado') + '</p>' +
+      '<div class="acc"><button class="btn sec sm" data-a="editCam" data-id="' + c.id + '">Editar</button></div></article>';
+  }).join('');
+  return '<h1 class="tit">Camiones</h1><button class="btn prim big" data-a="nuevoCam">' + IC.plus + ' NUEVO CAMIÓN</button>' +
+    (filas || '<p class="vacio">Aún no hay camiones.</p>');
+}
+
+function vCamForm() {
+  const c = S.camiones.find(x => x.id === S.p.id) || { tipo: 'sencillo' };
+  return '<h1 class="tit">' + (c.id ? 'Editar camión' : 'Nuevo camión') + '</h1><section class="card">' +
+    '<label class="lbl" for="cPlaca">Placa</label><input id="cPlaca" value="' + esc(c.placa || '') + '" placeholder="Ej: TQZ-123" autocapitalize="characters" autocomplete="off">' +
+    '<label class="lbl" for="cTipo">Tipo de camión</label><select id="cTipo" data-c="camPrev">' +
+    Object.keys(TIPOS).map(k => '<option value="' + k + '"' + (c.tipo === k ? ' selected' : '') + '>' + TIPOS[k] + '</option>').join('') + '</select>' +
+    '<div class="fila"><div><label class="lbl" for="cCap">Capacidad de carga (t)</label><input id="cCap" data-i="camPrev" inputmode="decimal" value="' + (c.capacidad ? NUM(c.capacidad) : '') + '" placeholder="Ej: 20"></div>' +
+    '<div><label class="lbl" for="cTara">Peso vacío (t) opcional</label><input id="cTara" data-i="camPrev" inputmode="decimal" value="' + (c.tara ? NUM(c.tara) : '') + '" placeholder="Ej: 8"></div></div>' +
+    '<div id="prevLimite" class="limbox"></div>' +
+    '<label class="lbl" for="cCond">Conductor asignado (opcional)</label><select id="cCond"><option value="">— Sin asignar —</option>' +
+    S.conductores.map(x => '<option value="' + x.id + '"' + (c.conductorId === x.id ? ' selected' : '') + '>' + esc(x.nombre) + '</option>').join('') + '</select></section>' +
+    '<button class="btn prim big" data-a="guardarCam" data-id="' + (c.id || '') + '">GUARDAR</button>';
+}
+
+function camPrev() {
+  const t = { tipo: $('#cTipo').value, capacidad: parseNum($('#cCap').value) || 0, tara: parseNum($('#cTara').value) || 0 };
+  $('#prevLimite').innerHTML = t.capacidad > 0 ? textoLimite(t) : '<span class="muted">Escribe la capacidad para ver el límite que se aplicará.</span>';
+}
+
+async function guardarCam(id) {
+  const raw = $('#cPlaca').value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const placa = raw.length === 6 ? raw.slice(0, 3) + '-' + raw.slice(3) : raw;
+  const tipo = $('#cTipo').value, cap = parseNum($('#cCap').value), tara = parseNum($('#cTara').value) || 0, cond = $('#cCond').value;
+  const err = [];
+  if (raw.length < 5 || raw.length > 7) err.push('Escribe una placa válida (ej: TQZ-123).');
+  if (S.camiones.some(c => c.placa.replace(/[^A-Z0-9]/g, '') === raw && c.id !== id)) err.push('Ya existe un camión con esa placa.');
+  if (cap === null || cap <= 0) err.push('La capacidad debe ser mayor a cero.');
+  if (tara < 0) err.push('El peso vacío no puede ser negativo.');
+  if (tara >= S.cfg.limites[tipo]) err.push('El peso vacío no puede ser igual o mayor al límite de la vía.');
+  if (err.length) { aviso('Revisa los datos', '<ul>' + err.map(e => '<li>' + e + '</li>').join('') + '</ul>'); return; }
+  try {
+    let c = S.camiones.find(x => x.id === id);
+    if (c) Object.assign(c, { placa, tipo, capacidad: cap, tara, conductorId: cond || null });
+    else { c = { id: uid(), placa, tipo, capacidad: cap, tara, conductorId: cond || null }; S.camiones.push(c); }
+    await dbPut('camiones', c);
+    toast('Camión guardado', 'ok'); atras();
+  } catch (e) { errorDB(e); }
+}
+
+/* ---------- Cuestionario de Capacitación (Aleatorio) ---------- */
+function initCuestionario() {
+  const banco = JSON.parse(JSON.stringify(BANCO_PREGUNTAS));
+  for (let i = banco.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [banco[i], banco[j]] = [banco[j], banco[i]];
+  }
+  const seleccionadas = banco.slice(0, 10).map(p => {
+    for (let i = p.opciones.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [p.opciones[i], p.opciones[j]] = [p.opciones[j], p.opciones[i]];
+    }
+    return p;
+  });
+  S.cuestionarioTemp = seleccionadas;
+}
+
+function vCapacitaciones() {
+  const conds = S.conductores.slice().sort((a, b) => a.nombre.localeCompare(b.nombre));
+  const preguntasHtml = S.cuestionarioTemp.map((p, idx) => {
+    const optsHtml = p.opciones.map((opt, oIdx) => 
+      '<label class="opcion-lbl"><input type="radio" name="p_' + idx + '" value="' + oIdx + '"><span>' + esc(opt.t) + '</span></label>'
+    ).join('');
+    return '<div class="pregunta-card"><h4><b>' + (idx + 1) + '.</b> ' + esc(p.pregunta) + '</h4>' + optsHtml + '</div>';
+  }).join('');
+
+  const hist = S.capacitaciones.slice().sort((a, b) => b.ts - a.ts).map(c => {
+    const d = S.conductores.find(x => x.id === c.conductorId);
+    return '<article class="item"><header><div><b>' + esc(d ? d.nombre : 'Conductor eliminado') + '</b><small>' + fmtFecha(c.ts) + ' · nota ' + c.nota + '</small></div>' +
+      '<span class="chip ' + (c.aprobada ? 'ok' : 'bad') + '">' + (c.aprobada ? 'Aprobó' : 'No aprobó') + '</span></header></article>';
+  }).join('');
+
+  return '<h1 class="tit">Capacitación (Cuestionario)</h1>' +
+    '<section class="card"><label class="lbl" for="kCond">Conductor a evaluar</label>' +
+    '<select id="kCond"><option value="">— Elige el conductor —</option>' +
+    conds.map(c => '<option value="' + c.id + '">' + esc(c.nombre) + ' · ' + (c.estado === 'habilitado' ? 'habilitado' : c.estado === 'recap' ? 'recapacitar' : 'pendiente') + '</option>').join('') + '</select>' +
+    '<p class="nota" style="margin-top:10px">El cuestionario consta de <b>10 preguntas aleatorias</b>. Se aprueba con el <b>' + S.cfg.notaMin + '%</b> o más (mínimo 7 respuestas correctas).</p></section>' +
+    '<form id="formCuestionario">' + preguntasHtml + '</form>' +
+    '<button class="btn prim big" data-a="calificarCuestionario">CALIFICAR CUESTIONARIO</button>' +
+    '<h2 class="paso" style="margin-top:20px">Historial de capacitaciones</h2>' + (hist || '<p class="vacio">Aún no hay capacitaciones registradas.</p>');
+}
+
+async function calificarCuestionario() {
+  const cid = $('#kCond').value;
+  if (!cid) { aviso('Falta conductor', 'Por favor selecciona el conductor que está presentando el cuestionario.'); return; }
+  
+  const preg = S.cuestionarioTemp;
+  let correctas = 0;
+  let respondidasTodas = true;
+
+  preg.forEach((p, idx) => {
+    const sel = document.querySelector('input[name="p_' + idx + '"]:checked');
+    if (!sel) { respondidasTodas = false; return; }
+    const oIdx = parseInt(sel.value, 10);
+    if (p.opciones[oIdx].correcta) correctas++;
+  });
+
+  if (!respondidasTodas) { aviso('Cuestionario incompleto', 'Debes responder todas las 10 preguntas antes de calificar.'); return; }
+
+  const nota = Math.round((correctas / 10) * 100);
+  const aprobada = nota >= S.cfg.notaMin;
+  const c = S.conductores.find(x => x.id === cid);
+  const reg = { id: uid(), conductorId: cid, ts: Date.now(), nota, aprobada };
+
+  try {
+    await dbPut('capacitaciones', reg);
+    S.capacitaciones.push(reg);
+    if (aprobada) {
+      c.estado = 'habilitado';
+      c.fechaHab = reg.ts;
+      await dbPut('conductores', c);
+    } else {
+      c.estado = 'recap';
+      await dbPut('conductores', c);
+    }
+    initCuestionario();
+    render();
+    aviso(aprobada ? '¡Capacitación Aprobada!' : 'No Aprobó la Capacitación',
+      '<p><b>' + esc(c.nombre) + '</b> obtuvo <b>' + correctas + '/10</b> respuestas correctas (Nota: <b>' + nota + '</b>).</p>' +
+      (aprobada ? '<p style="color:var(--ok)">El conductor ha quedado <b>habilitado</b>.</p>'
+                : '<p style="color:var(--bad)">No alcanzó el mínimo requerido (' + S.cfg.notaMin + '%). Requiere recapacitación.</p>')
+    );
+  } catch (e) {
+    errorDB(e);
+  }
+}
+
+/* ---------- Consolidado y Gráfico Mejorado ---------- */
+const filasMes = mes => S.conductores.map(c => ({ c, r: calcularConductorMes(c.id, mes, S.salidas, S.capacitaciones, S.cfg) }))
+  .filter(x => x.r.n > 0).sort((a, b) => b.r.puntaje - a.r.puntaje || b.r.n - a.r.n);
+
+function svgParetoMod(p) {
+  if (!p.total) return '<p class="muted" style="text-align:center;padding:20px">Sin incumplimientos registrados este mes.</p>';
+  const max = Math.max.apply(null, p.datos.map(d => d.fallas)) || 1;
+  return '<div class="grafico-card">' +
+    '<div class="grafico-titulo"><span>Frecuencia de Fallas</span><span class="muted">Total: ' + p.total + ' fallas</span></div>' +
+    p.datos.map(d => {
+      const pct = Math.round((d.fallas / max) * 100);
+      const color = d.fallas > (p.total / 4) ? 'var(--bad)' : d.fallas > 0 ? 'var(--warn)' : 'var(--ok)';
+      return '<div class="barra-item">' +
+        '<div class="barra-info"><span>' + esc(d.nombre) + '</span><span style="color:' + color + '">' + d.fallas + ' fallas (' + NUM(d.acum, 1) + '% acum.)</span></div>' +
+        '<div class="barra-track"><div class="barra-fill" style="width:' + Math.max(pct, 4) + '%; background:' + color + '"></div></div>' +
+        '</div>';
+    }).join('') +
+    '</div>';
+}
+
+function vConsolidado() {
+  const mes = S.p.mes || mesActual();
+  const filas = filasMes(mes);
+  const glob = cumplimientoGlobal(mes, S.salidas, S.cfg), ant = cumplimientoGlobal(mesAnterior(mes), S.salidas, S.cfg);
+  const par = calcularPareto(mes, S.salidas);
+  const inspRes = resumenInspecciones(mes, S.inspecciones);
+  const costo = filas.reduce((a, x) => a + x.r.bono, 0);
+  const totalSal = filas.reduce((a, x) => a + x.r.n, 0);
+  let delta = '<em class="muted">Sin mes anterior para comparar</em>';
+  if (glob !== null && ant !== null) {
+    const d = redondear(glob - ant, 1);
+    delta = '<em class="' + (d >= 0 ? 'up' : 'down') + '">' + (d >= 0 ? '▲ ' : '▼ ') + NUM(Math.abs(d), 1) + ' pts vs ' + etiquetaMes(mesAnterior(mes)) + '</em>';
+  }
+  const top = par.total ? par.datos[0] : null;
+  const cierre = S.cierres[mes];
+  const tabla = filas.length ? '<div class="tabla-w"><table><thead><tr><th>#</th><th class="n">Conductor</th><th>Sal.</th>' +
+    CONTROLES.map(c => '<th>% ' + c.corto + '</th>').join('') + '<th>Puntaje</th><th>% Bono</th><th>Bono</th></tr></thead><tbody>' +
+    filas.map((x, i) => '<tr class="fila-c" data-a="verCondMes" data-id="' + x.c.id + '" data-mes="' + mes + '"><td><span class="pos">' + (i + 1) + '</span></td>' +
+      '<td class="n"><b>' + esc(x.c.nombre) + '</b>' + (x.c.estado === 'recap' ? '<br><span class="chip bad">Recapacitar</span>' : '') + (x.r.ponderadas ? ' <span title="Incluye ponderación">⚖</span>' : '') + '</td>' +
+      '<td>' + x.r.n + '</td>' + CONTROLES.map(c => '<td>' + NUM(x.r.pct[c.k], 1) + '</td>').join('') +
+      '<td><b>' + NUM(x.r.puntaje, 1) + '</b></td><td>' + x.r.pctBono + '%</td><td><b>' + COP(x.r.bono) + '</b></td></tr>').join('') +
+    '</tbody></table></div><p class="nota">Toca un conductor para ver cada salida, sus fallas y sus fotos.</p>'
+    : '<p class="vacio">No hay salidas registradas en este mes.</p>';
+  return '<h1 class="tit">Consolidado y Bonos</h1><select data-c="cMes" aria-label="Mes" style="margin-bottom:14px">' +
+    mesesDisponibles().map(m => '<option value="' + m + '"' + (m === mes ? ' selected' : '') + '>' + etiquetaMes(m) + '</option>').join('') + '</select>' +
+    '<div class="resumen"><div class="res"><small>Cumplimiento global</small><b>' + (glob === null ? '—' : NUM(glob, 1) + '%') + '</b>' + delta + '</div>' +
+    '<div class="res"><small>Costo total de bonos</small><b>' + COP(costo) + '</b><em class="muted">' + totalSal + ' salidas · ' + filas.length + ' conductores</em></div>' +
+    '<div class="res"><small>Vía sin polvo visible</small><b>' + (inspRes.pctPolvo === null ? '—' : NUM(inspRes.pctPolvo, 1) + '%') + '</b><em class="muted">' + inspRes.total + ' inspecciones</em></div>' +
+    '<div class="res"><small>Vía sin material acumulado</small><b>' + (inspRes.pctMaterial === null ? '—' : NUM(inspRes.pctMaterial, 1) + '%') + '</b><em class="muted">' + inspRes.total + ' inspecciones</em></div>' +
+    '<div class="res" style="grid-column:1/-1"><small>Control que más se incumple</small><b style="font-size:22px">' + (top ? esc(top.nombre) + ' · ' + top.fallas + ' fallas' : 'Ninguno') + '</b></div></div>' +
+    svgParetoMod(par) + tabla +
+    (filas.length ? '<div class="acc" style="flex-wrap:wrap"><button class="btn sec sm" data-a="csv">Exportar CSV</button><button class="btn sec sm" data-a="imprimir">Imprimir / PDF</button></div>' : '') +
+    '<button class="btn prim big" data-a="cerrarMes" style="margin-top:14px">CERRAR MES</button>' +
+    (cierre ? '<p class="nota">Cerrado el ' + fmtDia(cierre.ts) + ' (' + cierre.cambios + ' conductor(es) pasaron a recapacitación).</p>' : '');
+}
+
+function csvMes(mes) {
+  const fil = filasMes(mes), q = v => '"' + String(v).replace(/"/g, '""') + '"', num = n => String(redondear(n, 2)).replace('.', ',');
+  const enc = ['Mes', 'Ranking', 'Conductor', 'Cédula', 'Salidas'].concat(CONTROLES.map(c => '% ' + c.corto), ['Puntaje', '% Bono', 'Bono (COP)', 'Estado']);
+  const lineas = [enc.map(q).join(';')];
+  fil.forEach((x, i) => lineas.push([etiquetaMes(mes), i + 1, x.c.nombre, x.c.cedula, x.r.n].concat(CONTROLES.map(c => num(x.r.pct[c.k])),
+    [num(x.r.puntaje), x.r.pctBono, x.r.bono, x.c.estado === 'habilitado' ? 'Habilitado' : x.c.estado === 'recap' ? 'Requiere recapacitación' : 'Pendiente']).map(q).join(';')));
+  return '\ufeff' + lineas.join('\r\n');
+}
+
+function descargar(txt, nombre, tipo) {
+  const b = new Blob([txt], { type: tipo }), a = document.createElement('a');
+  a.href = URL.createObjectURL(b); a.download = nombre; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 800);
+}
+
+function imprimirMes(mes) {
+  const fil = filasMes(mes), glob = cumplimientoGlobal(mes, S.salidas, S.cfg);
+  const costo = fil.reduce((a, x) => a + x.r.bono, 0);
+  $('#print').innerHTML = '<h1>Consolidado mensual · ' + etiquetaMes(mes) + '</h1><p>Cantera Santa Rita · Cumplimiento global: <b>' +
+    (glob === null ? '—' : NUM(glob, 1) + '%') + '</b> · Costo total de bonos: <b>' + COP(costo) + '</b></p>' +
+    '<table><thead><tr><th>#</th><th>Conductor</th><th>Salidas</th>' + CONTROLES.map(c => '<th>% ' + c.corto + '</th>').join('') + '<th>Puntaje</th><th>% Bono</th><th>Bono</th></tr></thead><tbody>' +
+    fil.map((x, i) => '<tr><td>' + (i + 1) + '</td><td style="text-align:left">' + esc(x.c.nombre) + '</td><td>' + x.r.n + '</td>' +
+      CONTROLES.map(c => '<td>' + NUM(x.r.pct[c.k], 1) + '</td>').join('') + '<td>' + NUM(x.r.puntaje, 1) + '</td><td>' + x.r.pctBono + '%</td><td>' + COP(x.r.bono) + '</td></tr>').join('') +
+    '</tbody></table>';
+  window.print();
+}
+
+async function cerrarMes() {
+  const mes = S.p.mes || mesActual();
+  const cambios = evaluarCierre(mes, S.conductores, S.salidas, S.capacitaciones, S.cfg);
+  const lista = cambios.map(x => { const c = S.conductores.find(y => y.id === x.conductorId); return '<li>' + esc(c.nombre) + ' (' + NUM(x.puntaje, 1) + ')</li>'; }).join('');
+  const ok = await confirmar('Cerrar ' + etiquetaMes(mes),
+    cambios.length ? '<p>Estos conductores tienen puntaje menor a ' + S.cfg.puntajeMin + ' y pasarán a <b>Requiere recapacitación</b>:</p><ul>' + lista + '</ul>'
+                   : '<p>Ningún conductor está por debajo del puntaje mínimo (' + S.cfg.puntajeMin + '). Se registrará el cierre del mes.</p>',
+    'CERRAR MES');
+  if (!ok) return;
+  try {
+    for (const x of cambios) { const c = S.conductores.find(y => y.id === x.conductorId); c.estado = 'recap'; await dbPut('conductores', c); }
+    S.cierres[mes] = { ts: Date.now(), cambios: cambios.length };
+    await dbSetMeta('cierres', S.cierres);
+    toast('Mes cerrado', 'ok'); refrescar();
+  } catch (e) { errorDB(e); }
+}
+
+/* ---------- Configuración ---------- */
+function vConfig() {
+  const c = S.cfg;
+  const esc3 = c.escala.map((e, i) => '<div class="fila" style="margin-bottom:8px"><div><label class="lbl">Desde puntaje</label><input id="eMin' + i + '" inputmode="decimal" value="' + NUM(e.min) + '"></div>' +
+    '<div><label class="lbl">% del bono</label><input id="ePct' + i + '" inputmode="decimal" value="' + NUM(e.pct) + '"></div></div>').join('');
+  return '<h1 class="tit">Configuración</h1>' +
+    '<section class="card"><h2 class="paso">Pesos de los controles <span id="sumaPesos" class="suma ok"></span></h2><div class="fila">' +
+    CONTROLES.map(k => '<div><label class="lbl">' + k.corto + ' (%)</label><input id="p_' + k.k + '" data-i="sumaPesos" inputmode="decimal" value="' + NUM(c.pesos[k.k]) + '"></div>').join('') + '</div>' +
+    '<p class="nota">Deben sumar exactamente 100.</p></section>' +
+    '<section class="card"><h2 class="paso">Escala del bono</h2>' + esc3 +
+    '<label class="lbl">Valor del bono máximo (COP)</label><input id="bonoMax" inputmode="numeric" value="' + Math.round(c.bonoMax) + '"></section>' +
+    '<section class="card"><h2 class="paso">Habilitación y capacitación</h2>' +
+    '<label class="lbl">Puntaje mínimo para seguir habilitado</label><input id="puntajeMin" inputmode="decimal" value="' + NUM(c.puntajeMin) + '">' +
+    '<label class="lbl">Nota mínima para aprobar el cuestionario (%)</label><input id="notaMin" inputmode="decimal" value="' + NUM(c.notaMin) + '">' +
+    '<label class="lbl">Peso (%) de las salidas anteriores a su última capacitación</label><input id="pesoPrevias" inputmode="decimal" value="' + NUM(c.pesoPrevias) + '"></section>' +
+    '<section class="card"><h2 class="paso">Límites de carga en la vía</h2>' +
+    Object.keys(TIPOS).map(k => '<label class="lbl">' + TIPOS[k] + ' (t)</label><input id="l_' + k + '" inputmode="decimal" value="' + NUM(c.limites[k]) + '">').join('') +
+    '<label class="lbl">Referencia vial recomendada (t) · 0 = desactivada</label><input id="recomendado" inputmode="decimal" value="' + NUM(c.recomendado) + '">' +
+    '<label class="chk"><input type="checkbox" id="exigirRec"' + (c.exigirRecomendado ? ' checked' : '') + '><span>Exigirla: pasarla cuenta como incumplimiento</span></label></section>' +
+    '<section class="card"><h2 class="paso">Tramos de la vía (Inspección)</h2>' +
+    '<label class="lbl" for="tramosCfg">Tramos de la vía a inspeccionar (uno por línea)</label>' +
+    '<textarea id="tramosCfg" placeholder="Ej:\nAcceso principal Cantera\nCurva del Trapiche\nSalida vía Santa Rita">' + esc((c.tramos || []).join('\n')) + '</textarea></section>' +
+    '<section class="card"><h2 class="paso">PIN de acceso</h2><label class="lbl">PIN del supervisor</label><input id="pinSup" inputmode="numeric" value="' + esc(c.pinSup) + '">' +
+    '<label class="lbl">PIN del administrador</label><input id="pinAdm" inputmode="numeric" value="' + esc(c.pinAdm) + '"></section>' +
+    '<button class="btn prim big" data-a="guardarCfg">GUARDAR CONFIGURACIÓN</button>';
+}
+
+function sumaPesosUI() {
+  const el = $('#sumaPesos'); if (!el) return;
+  let s = 0; CONTROLES.forEach(k => { s += parseNum($('#p_' + k.k).value) || 0; });
+  s = redondear(s, 2); el.textContent = 'Suma: ' + NUM(s) + '%'; el.className = 'suma ' + (Math.abs(s - 100) < 0.001 ? 'ok' : 'bad');
+}
+
+async function guardarCfg() {
+  const err = [], n = id => parseNum($(id).value);
+  const pesos = {}; let suma = 0;
+  CONTROLES.forEach(k => { const v = n('#p_' + k.k); if (v === null || v < 0) err.push('Peso inválido en ' + k.corto + '.'); pesos[k.k] = v || 0; suma += v || 0; });
+  if (Math.abs(suma - 100) > 0.001) err.push('Los pesos deben sumar 100.');
+  const escala = [0, 1, 2].map(i => ({ min: n('#eMin' + i), pct: n('#ePct' + i) }));
+  const bonoMax = n('#bonoMax'), puntajeMin = n('#puntajeMin'), notaMin = n('#notaMin'), pesoPrevias = n('#pesoPrevias'), rec = n('#recomendado');
+  const limites = {}; Object.keys(TIPOS).forEach(k => { limites[k] = n('#l_' + k); });
+  const pinSup = $('#pinSup').value.trim(), pinAdm = $('#pinAdm').value.trim();
+  const tramos = $('#tramosCfg').value.split('\n').map(t => t.trim()).filter(Boolean);
+  if (err.length) { aviso('Revisa la configuración', '<ul>' + err.map(e => '<li>' + e + '</li>').join('') + '</ul>'); return; }
+  const cfg = Object.assign({}, S.cfg, { pesos, escala, bonoMax, puntajeMin, notaMin, pesoPrevias, limites, recomendado: rec,
+    exigirRecomendado: $('#exigirRec').checked, pinSup, pinAdm, tramos });
+  try { await dbSetMeta('cfg', cfg); S.cfg = cfg; toast('Configuración guardada', 'ok'); }
+  catch (e) { errorDB(e); }
+}
+
+/* ---------- Respaldo ---------- */
+function vRespaldo() {
+  return '<h1 class="tit">Respaldo de datos</h1><section class="card"><p>Los datos viven solo en <b>este celular o computador</b>. Descarga un respaldo cada semana.</p></section>' +
+    '<button class="btn prim big" data-a="exportar">' + IC.respaldo + ' EXPORTAR RESPALDO (JSON)</button>' +
+    '<label class="btn sec" for="impIn" style="margin-top:0">IMPORTAR RESPALDO (JSON)</label><input id="impIn" type="file" accept=".json,application/json" data-c="importar" hidden>' +
+    (S.rol === 'admin' ? '<button class="btn danger" data-a="reiniciar" style="margin-top:14px">REINICIAR TODOS LOS DATOS</button>' : '');
+}
+
+async function exportar() {
+  const d = { app: 'volquetas', version: 3, fecha: new Date().toISOString(), conductores: S.conductores, camiones: S.camiones,
+    capacitaciones: S.capacitaciones, salidas: S.salidas, inspecciones: S.inspecciones, cfg: S.cfg, cierres: S.cierres };
+  descargar(JSON.stringify(d), 'respaldo-volquetas-' + new Date().toISOString().slice(0, 10) + '.json', 'application/json');
+  toast('Respaldo descargado', 'ok');
+}
+
+async function importar(file) {
+  if (!file) return;
+  try {
+    const d = JSON.parse(await file.text());
+    if (!d || d.app !== 'volquetas') throw new Error('Archivo no válido.');
+    const ok = await confirmar('Importar respaldo', '<p>Se reemplazarán los datos actuales.</p>', 'IMPORTAR', 'danger');
+    if (!ok) return;
+    for (const s of ['conductores', 'camiones', 'capacitaciones', 'salidas', 'inspecciones']) {
+      await dbClear(s);
+      const arr = d[s] || [];
+      for (const o of arr) await dbPut(s, o);
+    }
+    await dbSetMeta('cfg', mezclarCfg(d.cfg)); await dbSetMeta('cierres', d.cierres || {});
+    await cargarTodo(); toast('Respaldo importado', 'ok'); render();
+  } catch (e) { aviso('No se pudo importar', '<p>' + esc(e.message || e) + '</p>'); }
+}
+
+async function reiniciar() {
+  const ok = await confirmar('Reiniciar datos', '<p>Esto borra todos los registros.</p>', 'SÍ, BORRAR TODO', 'danger');
+  if (!ok) return;
+  try {
+    for (const s of ['conductores', 'camiones', 'capacitaciones', 'salidas', 'inspecciones']) await dbClear(s);
+    await dbSetMeta('cierres', {});
+    await cargarTodo(); toast('Datos reiniciados', 'ok'); render();
+  } catch (e) { errorDB(e); }
+}
+
+/* ---------- Acciones y Eventos ---------- */
+const ACC = {
+  atras: () => history.length > 1 ? history.back() : atras(),
+  salir: () => { S.rol = null; try { sessionStorage.removeItem('rol'); } catch (_) {} reset('login'); },
+  ir: el => go(el.dataset.v, (el.dataset.v === 'historial' || el.dataset.v === 'consolidado' || el.dataset.v === 'reporte') ? { mes: mesActual() } : {}),
+  selCond: el => {
+    S.sal.cid = el.dataset.id;
+    const cam = S.camiones.find(c => c.conductorId === el.dataset.id);
+    if (cam) S.sal.camId = cam.id;
+    refrescar();
+  },
+  ctl: el => { S.sal[el.dataset.k] = el.dataset.v === '1'; refrescar(); },
+  ctlInsp: el => { S.insp[el.dataset.k] = el.dataset.v === '1'; refrescar(); },
+  guardarSalida,
+  guardarInspeccion,
+  verFoto: el => { const s = S.salidas.find(x => x.id === el.dataset.id); if (s && s.foto) modal('<h3>' + esc(s.conductorNombre) + '</h3><p class="muted">' + fmtFecha(s.ts) + ' · ' + esc(s.placa) + '</p><img class="grande" src="' + s.foto + '" alt="Foto de evidencia">', [{ t: 'Cerrar', cls: 'prim', val: true }]); },
+  verFotoInsp: el => { const i = S.inspecciones.find(x => x.id === el.dataset.id); if (i && i.foto) modal('<h3>' + esc(i.tramo) + '</h3><p class="muted">' + fmtFecha(i.ts) + '</p><img class="grande" src="' + i.foto + '" alt="Foto de vía">', [{ t: 'Cerrar', cls: 'prim', val: true }]); },
+  anular: async el => {
+    const s = S.salidas.find(x => x.id === el.dataset.id); if (!s) return;
+    const motivo = await pedirTexto('Anular salida', '<p>' + esc(s.conductorNombre) + ' · ' + fmtFecha(s.ts) + '</p>');
+    if (!motivo) return;
+    try { s.anulada = true; s.motivoAnulacion = motivo; s.fechaAnulacion = Date.now(); await dbPut('salidas', s); toast('Salida anulada', 'ok'); refrescar(); }
+    catch (e) { s.anulada = false; errorDB(e); }
+  },
+  anularInsp: async el => {
+    const i = S.inspecciones.find(x => x.id === el.dataset.id); if (!i) return;
+    const motivo = await pedirTexto('Anular inspección', '<p>' + esc(i.tramo) + ' · ' + fmtFecha(i.ts) + '</p>');
+    if (!motivo) return;
+    try { i.anulada = true; i.motivoAnulacion = motivo; i.fechaAnulacion = Date.now(); await dbPut('inspecciones', i); toast('Inspección anulada', 'ok'); refrescar(); }
+    catch (e) { i.anulada = false; errorDB(e); }
+  },
+  masSalidas: () => { S.hmax += 30; refrescar(); },
+  nuevoCond: () => go('condForm', {}),
+  editCond: el => go('condForm', { id: el.dataset.id }),
+  verCond: el => go('historial', { mes: mesActual(), cid: el.dataset.id }),
+  guardarCond: el => guardarCond(el.dataset.id),
+  nuevoCam: () => go('camForm', {}),
+  editCam: el => go('camForm', { id: el.dataset.id }),
+  verCam: el => go('camForm', { id: el.dataset.id }),
+  guardarCam: el => guardarCam(el.dataset.id),
+  calificarCuestionario,
+  verCondMes: el => go('historial', { mes: el.dataset.mes, cid: el.dataset.id }),
+  csv: () => { const mes = S.p.mes || mesActual(); descargar(csvMes(mes), 'consolidado-' + mes + '.csv', 'text/csv;charset=utf-8'); toast('CSV descargado', 'ok'); },
+  imprimir: () => imprimirMes(S.p.mes || mesActual()),
+  imprimirReporte: () => imprimirReporteMes(S.p.mes || mesActual()),
+  cerrarMes,
+  guardarCfg,
+  exportar,
+  reiniciar,
+  entrar: () => {
+    const pin = ($('#pin').value || '').trim();
+    if (pin === S.cfg.pinAdm) S.rol = 'admin'; else if (pin === S.cfg.pinSup) S.rol = 'sup';
+    else { toast('PIN incorrecto', 'bad'); $('#pin').value = ''; return; }
+    try { sessionStorage.setItem('rol', S.rol); } catch (_) {}
+    reset('home');
+  }
+};
+const INP = {
+  busca: el => { S.sal.q = el.value; $('#listaCond').innerHTML = htmlListaCond(); },
+  peso: el => { S.sal.peso = el.value; $('#medidor').innerHTML = htmlMedidor(); },
+  obs: el => { S.sal.obs = el.value; },
+  inspTramo: el => { S.insp.tramo = el.value; },
+  inspObs: el => { S.insp.obs = el.value; },
+  camPrev,
+  sumaPesos: sumaPesosUI
+};
+const CHG = {
+  cam: el => { S.sal.camId = el.value || null; refrescar(); },
+  foto: async el => {
+    const f = el.files && el.files[0]; if (!f) return;
+    try { S.sal.foto = await comprimirImagen(f, 960, 0.7); refrescar(); }
+    catch (e) { toast(e.message, 'bad'); }
+  },
+  fotoInsp: async el => {
+    const f = el.files && el.files[0]; if (!f) return;
+    try { S.insp.foto = await comprimirImagen(f, 960, 0.7); refrescar(); }
+    catch (e) { toast(e.message, 'bad'); }
+  },
+  inspTramo: el => { S.insp.tramo = el.value; },
+  hMes: el => { S.p.mes = el.value; S.hmax = 30; refrescar(); },
+  hCond: el => { S.p.cid = el.value; S.hmax = 30; refrescar(); },
+  cMes: el => { S.p.mes = el.value; refrescar(); },
+  repMes: el => { S.p.mes = el.value; refrescar(); },
+  camPrev,
+  importar: async el => { await importar(el.files && el.files[0]); el.value = ''; }
+};
+const POST = { camForm: camPrev, config: sumaPesosUI };
+const VISTAS = {
+  login: vLogin, home: vHome, salida: vSalida, historial: vHistorial, conductores: vConductores,
+  condForm: vCondForm, camiones: vCamiones, camForm: vCamForm, capacitaciones: vCapacitaciones,
+  consolidado: vConsolidado, config: vConfig, respaldo: vRespaldo, inspeccion: vInspeccion, reporte: vReporte
+};
+
+document.addEventListener('click', e => { const el = e.target.closest('[data-a]'); if (el && ACC[el.dataset.a]) ACC[el.dataset.a](el, e); });
+document.addEventListener('input', e => { const el = e.target.closest('[data-i]'); if (el && INP[el.dataset.i]) INP[el.dataset.i](el, e); });
+document.addEventListener('change', e => { const el = e.target.closest('[data-c]'); if (el && CHG[el.dataset.c]) CHG[el.dataset.c](el, e); });
+document.addEventListener('submit', e => { const f = e.target.closest('[data-f]'); if (f) { e.preventDefault(); if (f.dataset.f === 'login') ACC.entrar(); } });
+window.addEventListener('popstate', atras);
+
+async function iniciar() {
+  try { db = await abrirDB(); await cargarTodo(); initCuestionario(); }
+  catch (e) {
+    $('#app').innerHTML = '<main class="wrap"><div class="card"><h1 class="tit">No se pudo iniciar</h1><p>' + esc(e.message || e) + '</p></div></main>';
+    return;
+  }
+  try { const r = sessionStorage.getItem('rol'); if (r === 'admin' || r === 'sup') { S.rol = r; S.vista = 'home'; } } catch (_) {}
+  render();
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+iniciar();
+</script>
+</body>
+</html>
